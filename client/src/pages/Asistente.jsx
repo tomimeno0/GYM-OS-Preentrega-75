@@ -19,15 +19,21 @@ export default function Asistente({ usuario }) {
     try {
       setEstado((await axios.get("/ia/estado")).data);
       setConversaciones((await axios.get("/ia/conversaciones")).data.items);
-      setRutinas(
-        (await axios.get("/rutinas")).data.items.filter(
-          (r) => r.estado === "activa",
-        ),
-      );
+      const respuesta = await axios.get("/rutinas");
+      const rutinasActivas = [];
+      for (let i = 0; i < respuesta.data.items.length; i++) {
+        const rutina = respuesta.data.items[i];
+        if (rutina.estado === "activa") {
+          rutinasActivas.push(rutina);
+        }
+      }
+      setRutinas(rutinasActivas);
     } catch (e) {
-      setAviso(
-        e.response?.data?.message || "No se pudo consultar el asistente.",
-      );
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudo consultar el asistente.");
+      }
     }
   }
   useEffect(() => {
@@ -46,9 +52,11 @@ export default function Asistente({ usuario }) {
       setModo(r.data.conversacion.modo);
       setMensajes(r.data.mensajes);
     } catch (e) {
-      setAviso(
-        e.response?.data?.message || "No se pudo abrir la conversación.",
-      );
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudo abrir la conversación.");
+      }
     } finally {
       setOcupado(false);
     }
@@ -63,24 +71,37 @@ export default function Asistente({ usuario }) {
         modo,
         conversacion_id: conversacion,
       });
-      setMensajes([
-        ...mensajes,
-        { rol: "user", contenido: consulta },
-        { rol: "assistant", contenido: r.data.respuesta },
-      ]);
+      const historialActualizado = mensajes.slice();
+      historialActualizado.push({
+        rol: "user",
+        contenido: consulta,
+      });
+      historialActualizado.push({
+        rol: "assistant",
+        contenido: r.data.respuesta,
+      });
+      setMensajes(historialActualizado);
       setConversacion(r.data.conversacion_id);
       setConsulta("");
       await cargar();
     } catch (error) {
-      setAviso(
-        error.response?.data?.message || "No se pudo contactar a Cohere.",
-      );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo contactar a Cohere.");
+      }
     } finally {
       setOcupado(false);
     }
   }
   async function generar(e, confirmado = false) {
-    e?.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     if (!confirmado) {
       setConfirmacion(true);
       return;
@@ -91,20 +112,39 @@ export default function Asistente({ usuario }) {
     try {
       const r = await axios.post(
         rutina ? "/ia/rutinas/" + rutina + "/adaptar" : "/ia/rutinas",
-        { preferencias, confirmar: true },
+        {
+          preferencias,
+          confirmar: true,
+        },
       );
       await cargar();
       setAviso(r.data.message + " La encontrás en Rutinas.");
     } catch (error) {
-      setAviso(
-        error.response?.data?.message || "No se pudo generar la propuesta.",
-      );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo generar la propuesta.");
+      }
     } finally {
       setOcupado(false);
     }
   }
   const habilitado =
-    usuario.consentimiento_ia && estado?.configurada && !ocupado;
+    usuario.consentimiento_ia &&
+    estado !== null &&
+    estado !== undefined &&
+    estado.configurada &&
+    !ocupado;
+  const conversacionesDelModo = [];
+  for (let i = 0; i < conversaciones.length; i++) {
+    if (conversaciones[i].modo === modo) {
+      conversacionesDelModo.push(conversaciones[i]);
+    }
+  }
   return (
     <main>
       {confirmacion && (
@@ -166,13 +206,11 @@ export default function Asistente({ usuario }) {
               onChange={(e) => abrir(e.target.value)}
             >
               <option value="">Nueva conversación</option>
-              {conversaciones
-                .filter((c) => c.modo === modo)
-                .map((c) => (
-                  <option value={c.id} key={c.id}>
-                    {c.titulo}
-                  </option>
-                ))}
+              {conversacionesDelModo.map((c) => (
+                <option value={c.id} key={c.id}>
+                  {c.titulo}
+                </option>
+              ))}
             </select>
           </label>
         </div>

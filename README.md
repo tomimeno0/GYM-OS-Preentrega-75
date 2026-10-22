@@ -47,3 +47,10 @@ Cohere se llama desde el backend, con clave privada en .env y consentimiento en 
 [Mapa de operaciones UML](docs/METODOS-UML.md) · [Plan de reescritura](docs/PLAN.md) · [Verificación y límites](docs/VERIFICACION.md)
 
 Se conserva la licencia y procedencia del catálogo en `models/exercises/`. No se incluyen fotos/GIF del conjunto original ni los documentos privados del curso. No hay suites de tests ni comentarios explicativos en el código entregado; la explicación está en los MD.
+
+## Código para estudiar y defender
+
+La lógica usa bucles tradicionales, if/else y llamadas directas a Sequelize. Los formularios copian explícitamente los campos antes de actualizar React. Se conservan protecciones de cuentas, cifrado de datos existentes y guardados conjuntos con commit/rollback, explicados en las guías. El objetivo es código claro y comprobado, no añadir una arquitectura de servicios.
+
+- [Criterio del profesor y diferencias conservadas](docs/CRITERIO-DEL-PROFESOR.md)
+- [Pruebas de esta revisión y límites](docs/VERIFICACION.md)

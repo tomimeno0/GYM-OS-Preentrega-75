@@ -26,17 +26,22 @@ export default function App() {
   const [error, setError] = useState("");
   const [confirmacion, setConfirmacion] = useState(false);
   const navegar = useNavigate();
+  async function cargarCuenta() {
+    try {
+      const respuesta = await axios.get("/cuenta");
+      setUsuario(respuesta.data.user);
+    } catch (error) {
+      if (!error.response || error.response.status !== 401) {
+        setError(
+          "No se pudo conectar con el servidor. Recargá para volver a intentar.",
+        );
+      }
+    } finally {
+      setCargando(false);
+    }
+  }
   useEffect(() => {
-    axios
-      .get("/cuenta")
-      .then((r) => setUsuario(r.data.user))
-      .catch((e) => {
-        if (e.response?.status !== 401)
-          setError(
-            "No se pudo conectar con el servidor. Recargá para volver a intentar.",
-          );
-      })
-      .finally(() => setCargando(false));
+    cargarCuenta();
   }, []);
   async function salir(confirmado = false) {
     if (!confirmado) {
@@ -45,14 +50,22 @@ export default function App() {
     }
     setConfirmacion(false);
     try {
-      await axios.post("/logout", { confirmar: true });
+      await axios.post("/logout", {
+        confirmar: true,
+      });
       setUsuario(null);
       navegar("/");
     } catch (e) {
-      setError(e.response?.data?.message || "No se pudo cerrar la sesión.");
+      if (e.response && e.response.data && e.response.data.message) {
+        setError(e.response.data.message);
+      } else {
+        setError("No se pudo cerrar la sesión.");
+      }
     }
   }
-  if (cargando) return <main className="cargando">Cargando GYM-OS…</main>;
+  if (cargando) {
+    return <main className="cargando">Cargando GYM-OS…</main>;
+  }
   return (
     <>
       {confirmacion && (

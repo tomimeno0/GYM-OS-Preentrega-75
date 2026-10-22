@@ -11,6 +11,12 @@ const vacia = {
   brazos_cm: "",
   piernas_cm: "",
 };
+function mostrarPorcentaje(valor) {
+  if (valor === null || valor === undefined) {
+    return "—";
+  }
+  return valor;
+}
 export default function Medidas({ usuario }) {
   const [items, setItems] = useState([]);
   const [datos, setDatos] = useState(vacia);
@@ -23,9 +29,11 @@ export default function Medidas({ usuario }) {
       setItems(r.data.items);
       setCargado(true);
     } catch (e) {
-      setAviso(
-        e.response?.data?.message || "No se pudieron cargar las medidas.",
-      );
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudieron cargar las medidas.");
+      }
     }
   }
   useEffect(() => {
@@ -35,10 +43,28 @@ export default function Medidas({ usuario }) {
     e.preventDefault();
     setOcupado(true);
     setAviso("");
-    const cuerpo = { ...datos };
-    for (const campo of Object.keys(cuerpo))
-      if (campo !== "nivel_actividad")
-        cuerpo[campo] = cuerpo[campo] === "" ? null : Number(cuerpo[campo]);
+    const cuerpo = {
+      peso_kg: datos.peso_kg,
+      altura_cm: datos.altura_cm,
+      grasa_corporal: datos.grasa_corporal,
+      musculo_corporal: datos.musculo_corporal,
+      nivel_actividad: datos.nivel_actividad,
+      cintura_cm: datos.cintura_cm,
+      pecho_cm: datos.pecho_cm,
+      brazos_cm: datos.brazos_cm,
+      piernas_cm: datos.piernas_cm,
+    };
+    const campos = Object.keys(cuerpo);
+    for (let indice = 0; indice < campos.length; indice++) {
+      const campo = campos[indice];
+      if (campo !== "nivel_actividad") {
+        if (cuerpo[campo] === "") {
+          cuerpo[campo] = null;
+        } else {
+          cuerpo[campo] = Number(cuerpo[campo]);
+        }
+      }
+    }
     try {
       await axios.post(
         items.length ? "/mediciones" : "/mediciones/initial",
@@ -48,7 +74,15 @@ export default function Medidas({ usuario }) {
       await cargar();
       setAviso("Medición agregada al historial.");
     } catch (error) {
-      setAviso(error.response?.data?.message || "No se pudo guardar.");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo guardar.");
+      }
     } finally {
       setOcupado(false);
     }
@@ -88,7 +122,18 @@ export default function Medidas({ usuario }) {
                 required={["peso_kg", "altura_cm"].includes(campo)}
                 value={datos[campo]}
                 onChange={(e) =>
-                  setDatos({ ...datos, [campo]: e.target.value })
+                  setDatos({
+                    peso_kg: datos.peso_kg,
+                    altura_cm: datos.altura_cm,
+                    grasa_corporal: datos.grasa_corporal,
+                    musculo_corporal: datos.musculo_corporal,
+                    nivel_actividad: datos.nivel_actividad,
+                    cintura_cm: datos.cintura_cm,
+                    pecho_cm: datos.pecho_cm,
+                    brazos_cm: datos.brazos_cm,
+                    piernas_cm: datos.piernas_cm,
+                    [campo]: e.target.value,
+                  })
                 }
               />
             </label>
@@ -98,7 +143,17 @@ export default function Medidas({ usuario }) {
             <select
               value={datos.nivel_actividad}
               onChange={(e) =>
-                setDatos({ ...datos, nivel_actividad: e.target.value })
+                setDatos({
+                  peso_kg: datos.peso_kg,
+                  altura_cm: datos.altura_cm,
+                  grasa_corporal: datos.grasa_corporal,
+                  musculo_corporal: datos.musculo_corporal,
+                  cintura_cm: datos.cintura_cm,
+                  pecho_cm: datos.pecho_cm,
+                  brazos_cm: datos.brazos_cm,
+                  piernas_cm: datos.piernas_cm,
+                  nivel_actividad: e.target.value,
+                })
               }
             >
               <option value="baja">Baja</option>
@@ -134,8 +189,8 @@ export default function Medidas({ usuario }) {
                   </td>
                   <td>{m.peso_kg} kg</td>
                   <td>{m.altura_cm} cm</td>
-                  <td>{m.grasa_corporal ?? "—"} %</td>
-                  <td>{m.musculo_corporal ?? "—"} %</td>
+                  <td>{mostrarPorcentaje(m.grasa_corporal)} %</td>
+                  <td>{mostrarPorcentaje(m.musculo_corporal)} %</td>
                   <td>{m.nivel_actividad}</td>
                 </tr>
               ))}

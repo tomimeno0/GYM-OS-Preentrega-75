@@ -14,23 +14,37 @@ export default function Entrenamientos() {
     try {
       const r = await axios.get("/entrenamientos");
       setItems(r.data.items);
-      const iniciado = r.data.items.find((e) => e.estado === "iniciado");
-      setActual(
-        iniciado
-          ? {
-              ...iniciado,
-              distancia_km: iniciado.distancia_km || 0,
-              observaciones: iniciado.observaciones || "",
-            }
-          : null,
-      );
+      let iniciado = null;
+      for (let i = 0; i < r.data.items.length; i++) {
+        if (r.data.items[i].estado === "iniciado") {
+          iniciado = r.data.items[i];
+          break;
+        }
+      }
+      if (iniciado) {
+        setActual({
+          id: iniciado.id,
+          ejercicios: iniciado.ejercicios,
+          distancia_km: iniciado.distancia_km || 0,
+          observaciones: iniciado.observaciones || "",
+        });
+      } else {
+        setActual(null);
+      }
       const planes = await axios.get("/rutinas");
-      setRutinas(planes.data.items.filter((p) => p.estado === "activa"));
+      const rutinasActivas = [];
+      for (let i = 0; i < planes.data.items.length; i++) {
+        if (planes.data.items[i].estado === "activa") {
+          rutinasActivas.push(planes.data.items[i]);
+        }
+      }
+      setRutinas(rutinasActivas);
     } catch (e) {
-      setAviso(
-        e.response?.data?.message ||
-          "No se pudieron cargar los entrenamientos.",
-      );
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudieron cargar los entrenamientos.");
+      }
     }
   }
   useEffect(() => {
@@ -47,7 +61,15 @@ export default function Entrenamientos() {
       });
       await cargar();
     } catch (error) {
-      setAviso(error.response?.data?.message || "No se pudo iniciar.");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo iniciar.");
+      }
     } finally {
       setOcupado(false);
     }
@@ -62,25 +84,53 @@ export default function Entrenamientos() {
     setAviso("");
     try {
       await axios.put("/entrenamientos/" + actual.id, {
-        ...actual,
+        ejercicios: actual.ejercicios,
+        distancia_km: actual.distancia_km,
+        observaciones: actual.observaciones,
         estado,
         confirmar: estado !== "iniciado",
       });
       await cargar();
       setAviso("Entrenamiento guardado.");
     } catch (error) {
-      setAviso(error.response?.data?.message || "No se pudo guardar.");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo guardar.");
+      }
     } finally {
       setOcupado(false);
     }
   }
-  function cambiar(i, campo, valor) {
+  function cambiar(indice, campo, valor) {
+    const ejercicios = actual.ejercicios.slice();
+    const anterior = ejercicios[indice];
+    const ejercicio = {
+      id: anterior.id,
+      realizado: anterior.realizado,
+      nombre_ejercicio: anterior.nombre_ejercicio,
+      series: anterior.series,
+      repeticiones: anterior.repeticiones,
+      peso_utilizado_kg: anterior.peso_utilizado_kg,
+    };
+    ejercicio[campo] = valor;
+    ejercicios[indice] = ejercicio;
     setActual({
-      ...actual,
-      ejercicios: actual.ejercicios.map((e, j) =>
-        i === j ? { ...e, [campo]: valor } : e,
-      ),
+      id: actual.id,
+      ejercicios,
+      distancia_km: actual.distancia_km,
+      observaciones: actual.observaciones,
     });
+  }
+  const entrenamientosAnteriores = [];
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].estado !== "iniciado") {
+      entrenamientosAnteriores.push(items[i]);
+    }
   }
   return (
     <main>
@@ -133,7 +183,7 @@ export default function Entrenamientos() {
                       min={campo === "peso_utilizado_kg" ? 0 : 1}
                       max={max}
                       step={campo === "peso_utilizado_kg" ? "0.01" : "1"}
-                      value={e[campo] ?? 0}
+                      value={e[campo] || 0}
                       onChange={(v) =>
                         cambiar(i, campo, Number(v.target.value))
                       }
@@ -152,7 +202,12 @@ export default function Entrenamientos() {
               step="0.01"
               value={actual.distancia_km}
               onChange={(e) =>
-                setActual({ ...actual, distancia_km: Number(e.target.value) })
+                setActual({
+                  id: actual.id,
+                  ejercicios: actual.ejercicios,
+                  observaciones: actual.observaciones,
+                  distancia_km: Number(e.target.value),
+                })
               }
             />
           </label>
@@ -162,7 +217,12 @@ export default function Entrenamientos() {
               maxLength={2000}
               value={actual.observaciones}
               onChange={(e) =>
-                setActual({ ...actual, observaciones: e.target.value })
+                setActual({
+                  id: actual.id,
+                  ejercicios: actual.ejercicios,
+                  distancia_km: actual.distancia_km,
+                  observaciones: e.target.value,
+                })
               }
             />
           </label>
@@ -232,28 +292,26 @@ export default function Entrenamientos() {
       {!items.length && (
         <p className="vacio">Todavía no registraste entrenamientos.</p>
       )}
-      {items
-        .filter((e) => e.estado !== "iniciado")
-        .map((e) => (
-          <article className="tarjeta" key={e.id}>
-            <span className="badge">{e.estado}</span>
-            <h3>
-              {e.fecha} · {e.distancia_km || 0} km
-            </h3>
-            <p>{e.observaciones}</p>
-            <details>
-              <summary>Ver ejercicios registrados</summary>
-              <ul>
-                {e.ejercicios.map((x) => (
-                  <li key={x.id}>
-                    {x.realizado ? "✓" : "—"} {x.nombre_ejercicio}: {x.series} ×{" "}
-                    {x.repeticiones} · {x.peso_utilizado_kg || 0} kg
-                  </li>
-                ))}
-              </ul>
-            </details>
-          </article>
-        ))}
+      {entrenamientosAnteriores.map((e) => (
+        <article className="tarjeta" key={e.id}>
+          <span className="badge">{e.estado}</span>
+          <h3>
+            {e.fecha} · {e.distancia_km || 0} km
+          </h3>
+          <p>{e.observaciones}</p>
+          <details>
+            <summary>Ver ejercicios registrados</summary>
+            <ul>
+              {e.ejercicios.map((x) => (
+                <li key={x.id}>
+                  {x.realizado ? "✓" : "—"} {x.nombre_ejercicio}: {x.series} ×{" "}
+                  {x.repeticiones} · {x.peso_utilizado_kg || 0} kg
+                </li>
+              ))}
+            </ul>
+          </details>
+        </article>
+      ))}
     </main>
   );
 }

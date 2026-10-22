@@ -67,3 +67,7 @@ Cada endpoint tiene un solo responsable principal. Que dos rutas usen el mismo h
 La distribución busca continuidad funcional y carga razonable, no nueve cantidades iguales de rutas. Las rutas que calculan progreso, guardan varios detalles o llaman a Cohere requieren más explicación que un listado simple.
 
 En el 75, Joaquín reúne consulta y escritura de rutinas; Valentín tiene las dietas manuales y Mateo los consumos/macros. Gade reúne medidas y progreso. Tomás conserva los endpoints de IA: los helpers de guardar una rutina se coordinan con Joaquín, sin duplicar sus rutas manuales.
+
+## Lectura de la implementación
+
+Cada guía incluye una sección sobre la lógica simplificada y las diferencias que se conservan frente al repaso. El reparto y el alcance no cambiaron. Consultá el [criterio del profesor y las protecciones conservadas](../docs/CRITERIO-DEL-PROFESOR.md).

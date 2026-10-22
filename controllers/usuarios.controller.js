@@ -10,7 +10,6 @@ const {
   desencriptar,
 } = require("./seguridad.controller");
 const { registrarEvento } = require("./bitacora.controller");
-
 function datosPublicos(usuario) {
   return {
     id: usuario.id,
@@ -24,12 +23,17 @@ function datosPublicos(usuario) {
     consentimiento_ia: usuario.consentimiento_ia,
   };
 }
-
 async function abrirSesion(usuario, res, transaction) {
-  const token = jwt.sign({ id: usuario.id }, process.env.JWT_SECRET, {
-    expiresIn: "8h",
-    jwtid: tokenNuevo(),
-  });
+  const token = jwt.sign(
+    {
+      id: usuario.id,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "8h",
+      jwtid: tokenNuevo(),
+    },
+  );
   await Sesion.create(
     {
       usuario_id: usuario.id,
@@ -37,7 +41,9 @@ async function abrirSesion(usuario, res, transaction) {
       fecha_creacion: new Date(),
       fecha_expiracion: new Date(Date.now() + 8 * 3600000),
     },
-    { transaction },
+    {
+      transaction,
+    },
   );
   res.cookie("gymos75", token, {
     httpOnly: true,
@@ -47,7 +53,6 @@ async function abrirSesion(usuario, res, transaction) {
     path: "/",
   });
 }
-
 async function registrarUsuario(req, res) {
   try {
     const { nombre, apellido, email, password } = req.body;
@@ -57,8 +62,11 @@ async function registrarUsuario(req, res) {
       nombre.length > 100 ||
       (apellido !== undefined &&
         (typeof apellido !== "string" || apellido.length > 100))
-    )
-      return res.status(400).json({ message: "Revisá nombre y apellido." });
+    ) {
+      return res.status(400).json({
+        message: "Revisá nombre y apellido.",
+      });
+    }
     if (
       typeof email !== "string" ||
       email.length > 150 ||
@@ -66,19 +74,28 @@ async function registrarUsuario(req, res) {
       typeof password !== "string" ||
       password.length < 10 ||
       Buffer.byteLength(password) > 72
-    )
+    ) {
       return res.status(400).json({
         message:
           "Ingresá un correo válido y una contraseña de 10 a 72 caracteres.",
       });
+    }
     const correo = email.trim().toLowerCase();
-    if (await Usuario.findOne({ where: { email: correo } }))
-      return res
-        .status(409)
-        .json({ message: "Ese correo ya está registrado." });
+    if (
+      await Usuario.findOne({
+        where: {
+          email: correo,
+        },
+      })
+    ) {
+      return res.status(409).json({
+        message: "Ese correo ya está registrado.",
+      });
+    }
     const password_hash = await encriptarIrreversible(password);
     let usuario;
-    await sequelize.transaction(async (transaction) => {
+    const transaction = await sequelize.transaction();
+    try {
       usuario = await Usuario.create(
         {
           nombre: nombre.trim(),
@@ -87,20 +104,28 @@ async function registrarUsuario(req, res) {
           password_hash,
           fecha_registro: new Date(),
         },
-        { transaction },
+        {
+          transaction,
+        },
       );
       const rol = await Rol.findOne({
-        where: { nombre: "Cliente" },
+        where: {
+          nombre: "Cliente",
+        },
         transaction,
       });
-      if (!rol) throw new Error("Falta inicializar el rol Cliente");
+      if (!rol) {
+        throw new Error("Falta inicializar el rol Cliente");
+      }
       await UsuarioRol.create(
         {
           usuario_id: usuario.id,
           rol_id: rol.id,
           fecha_asignacion: new Date(),
         },
-        { transaction },
+        {
+          transaction,
+        },
       );
       await abrirSesion(usuario, res, transaction);
       await registrarEvento(
@@ -109,17 +134,25 @@ async function registrarUsuario(req, res) {
         "cuentas",
         transaction,
       );
+      await transaction.commit();
+    } catch (errorGuardado) {
+      await transaction.rollback();
+      throw errorGuardado;
+    }
+    res.status(201).json({
+      user: datosPublicos(usuario),
     });
-    res.status(201).json({ user: datosPublicos(usuario) });
   } catch (error) {
-    if (error.name === "SequelizeUniqueConstraintError")
-      return res
-        .status(409)
-        .json({ message: "Ese correo ya está registrado." });
-    res.status(500).json({ message: "No se pudo registrar la cuenta." });
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return res.status(409).json({
+        message: "Ese correo ya está registrado.",
+      });
+    }
+    res.status(500).json({
+      message: "No se pudo registrar la cuenta.",
+    });
   }
 }
-
 async function iniciarSesion(req, res) {
   try {
     const { email, password } = req.body;
@@ -127,47 +160,81 @@ async function iniciarSesion(req, res) {
       typeof email !== "string" ||
       typeof password !== "string" ||
       Buffer.byteLength(password) > 72
-    )
-      return res.status(400).json({ message: "Ingresá correo y contraseña." });
+    ) {
+      return res.status(400).json({
+        message: "Ingresá correo y contraseña.",
+      });
+    }
     const usuario = await Usuario.findOne({
-      where: { email: email.trim().toLowerCase(), estado: "activo" },
+      where: {
+        email: email.trim().toLowerCase(),
+        estado: "activo",
+      },
     });
-    if (!usuario || !(await compararPassword(password, usuario.password_hash)))
-      return res
-        .status(401)
-        .json({ message: "Correo o contraseña incorrectos." });
-    await sequelize.transaction(async (transaction) => {
-      await usuario.update({ ultima_conexion: new Date() }, { transaction });
+    if (
+      !usuario ||
+      !(await compararPassword(password, usuario.password_hash))
+    ) {
+      return res.status(401).json({
+        message: "Correo o contraseña incorrectos.",
+      });
+    }
+    const transaction = await sequelize.transaction();
+    try {
+      await usuario.update(
+        {
+          ultima_conexion: new Date(),
+        },
+        {
+          transaction,
+        },
+      );
       await abrirSesion(usuario, res, transaction);
       await registrarEvento(usuario.id, "CU002_LOGIN", "cuentas", transaction);
+      await transaction.commit();
+    } catch (errorGuardado) {
+      await transaction.rollback();
+      throw errorGuardado;
+    }
+    res.json({
+      user: datosPublicos(usuario),
     });
-    res.json({ user: datosPublicos(usuario) });
   } catch (error) {
-    res.status(500).json({ message: "No se pudo iniciar sesión." });
+    res.status(500).json({
+      message: "No se pudo iniciar sesión.",
+    });
   }
 }
-
 async function cerrarSesion(req, res) {
   try {
-    if (req.body.confirmar !== true)
-      return res.status(400).json({ message: "Confirmá el cierre de sesión." });
+    if (req.body.confirmar !== true) {
+      return res.status(400).json({
+        message: "Confirmá el cierre de sesión.",
+      });
+    }
     await Sesion.destroy({
       where: {
         usuario_id: req.user.id,
         token_hash: hashToken(req.cookies.gymos75),
       },
     });
-    res.clearCookie("gymos75", { path: "/", httpOnly: true, sameSite: "lax" });
+    res.clearCookie("gymos75", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
+    });
     res.status(204).end();
   } catch (error) {
-    res.status(500).json({ message: "No se pudo cerrar la sesión." });
+    res.status(500).json({
+      message: "No se pudo cerrar la sesión.",
+    });
   }
 }
-
 function verCuenta(req, res) {
-  res.json({ user: datosPublicos(req.user) });
+  res.json({
+    user: datosPublicos(req.user),
+  });
 }
-
 async function actualizarDatos(req, res) {
   try {
     const {
@@ -191,8 +258,11 @@ async function actualizarDatos(req, res) {
       typeof consentimiento_ia !== "boolean" ||
       typeof zona_horaria !== "string" ||
       zona_horaria.length > 80
-    )
-      return res.status(400).json({ message: "Revisá los datos del perfil." });
+    ) {
+      return res.status(400).json({
+        message: "Revisá los datos del perfil.",
+      });
+    }
     if (
       fecha_nacimiento &&
       (!/^\d{4}-\d{2}-\d{2}$/.test(fecha_nacimiento) ||
@@ -200,14 +270,19 @@ async function actualizarDatos(req, res) {
         new Date(fecha_nacimiento).toISOString().slice(0, 10) !==
           fecha_nacimiento ||
         new Date(fecha_nacimiento) > new Date())
-    )
-      return res
-        .status(400)
-        .json({ message: "La fecha de nacimiento no es válida." });
+    ) {
+      return res.status(400).json({
+        message: "La fecha de nacimiento no es válida.",
+      });
+    }
     try {
-      new Intl.DateTimeFormat("es", { timeZone: zona_horaria }).format();
+      new Intl.DateTimeFormat("es", {
+        timeZone: zona_horaria,
+      }).format();
     } catch (error) {
-      return res.status(400).json({ message: "La zona horaria no es válida." });
+      return res.status(400).json({
+        message: "La zona horaria no es válida.",
+      });
     }
     await req.user.update({
       nombre: nombre.trim(),
@@ -219,38 +294,54 @@ async function actualizarDatos(req, res) {
       consentimiento_ia,
     });
     await registrarEvento(req.user.id, "CU005_PERFIL", "cuentas");
-    res.json({ user: datosPublicos(req.user) });
+    res.json({
+      user: datosPublicos(req.user),
+    });
   } catch (error) {
-    res.status(500).json({ message: "No se pudo guardar el perfil." });
+    res.status(500).json({
+      message: "No se pudo guardar el perfil.",
+    });
   }
 }
-
 async function eliminarCuenta(req, res) {
   try {
     if (
       req.body.confirmar !== true ||
       typeof req.body.password !== "string" ||
       !(await compararPassword(req.body.password, req.user.password_hash))
-    )
-      return res
-        .status(403)
-        .json({ message: "Confirmá la eliminación con tu contraseña actual." });
-    await sequelize.transaction(async (transaction) => {
+    ) {
+      return res.status(403).json({
+        message: "Confirmá la eliminación con tu contraseña actual.",
+      });
+    }
+    const transaction = await sequelize.transaction();
+    try {
       await registrarEvento(
         null,
         "CU006_ELIMINAR_CUENTA",
         "cuentas",
         transaction,
       );
-      await req.user.destroy({ transaction });
+      await req.user.destroy({
+        transaction,
+      });
+      await transaction.commit();
+    } catch (errorGuardado) {
+      await transaction.rollback();
+      throw errorGuardado;
+    }
+    res.clearCookie("gymos75", {
+      path: "/",
+      httpOnly: true,
+      sameSite: "lax",
     });
-    res.clearCookie("gymos75", { path: "/", httpOnly: true, sameSite: "lax" });
     res.status(204).end();
   } catch (error) {
-    res.status(500).json({ message: "No se pudo eliminar la cuenta." });
+    res.status(500).json({
+      message: "No se pudo eliminar la cuenta.",
+    });
   }
 }
-
 module.exports = {
   registrarUsuario,
   iniciarSesion,

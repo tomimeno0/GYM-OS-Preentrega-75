@@ -1,5 +1,4 @@
 const { Bitacora } = require("../models");
-
 async function registrarEvento(usuario_id, accion, modulo, transaction) {
   await Bitacora.create(
     {
@@ -9,8 +8,11 @@ async function registrarEvento(usuario_id, accion, modulo, transaction) {
       fecha_hora: new Date(),
       resultado: "exitoso",
     },
-    { transaction },
+    {
+      transaction,
+    },
   );
 }
-
-module.exports = { registrarEvento };
+module.exports = {
+  registrarEvento,
+};

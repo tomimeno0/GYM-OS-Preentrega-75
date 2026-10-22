@@ -50,34 +50,76 @@ export default function Nutricion({ modo, usuario }) {
         setItems((await axios.get("/dietas")).data.items);
         setObjetivos((await axios.get("/objetivos")).data.items);
       } else {
-        const r = await axios.get("/consumos", { params: { fecha } });
+        const r = await axios.get("/consumos", {
+          params: {
+            fecha,
+          },
+        });
         setResumen(r.data);
         setItems(r.data.items);
       }
     } catch (e) {
-      setAviso(e.response?.data?.message || "No se pudo cargar la nutrición.");
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudo cargar la nutrición.");
+      }
     }
   }
   useEffect(() => {
     cargar();
   }, [fecha]);
-  function cambiarComida(indice, campo, valor) {
-    if (esDieta)
-      setDatos({
-        ...datos,
-        comidas: datos.comidas.map((c, i) =>
-          i === indice ? { ...c, [campo]: valor } : c,
-        ),
-      });
-    else setComida({ ...comida, [campo]: valor });
+  function copiarAlimento(alimento) {
+    return {
+      nombre: alimento.nombre,
+      cantidad: alimento.cantidad,
+      unidad: alimento.unidad,
+      calorias: alimento.calorias,
+      proteinas_g: alimento.proteinas_g,
+      carbohidratos_g: alimento.carbohidratos_g,
+      grasas_g: alimento.grasas_g,
+    };
   }
-  function cambiarAlimento(ci, ai, campo, valor) {
-    const c = esDieta ? datos.comidas[ci] : comida;
-    cambiarComida(
-      ci,
-      "alimentos",
-      c.alimentos.map((a, i) => (i === ai ? { ...a, [campo]: valor } : a)),
-    );
+  function copiarComida(comida) {
+    return {
+      nombre_comida: comida.nombre_comida,
+      tipo_comida: comida.tipo_comida,
+      hora: comida.hora,
+      alimentos: comida.alimentos.slice(),
+    };
+  }
+  function cambiarComida(indice, campo, valor) {
+    if (esDieta) {
+      const comidas = datos.comidas.slice();
+      const nuevaComida = copiarComida(comidas[indice]);
+      nuevaComida[campo] = valor;
+      comidas[indice] = nuevaComida;
+      setDatos({
+        nombre: datos.nombre,
+        descripcion: datos.descripcion,
+        objetivo_id: datos.objetivo_id,
+        calorias_objetivo: datos.calorias_objetivo,
+        proteinas_objetivo_g: datos.proteinas_objetivo_g,
+        carbohidratos_objetivo_g: datos.carbohidratos_objetivo_g,
+        grasas_objetivo_g: datos.grasas_objetivo_g,
+        comidas,
+      });
+    } else {
+      const nuevaComida = copiarComida(comida);
+      nuevaComida[campo] = valor;
+      setComida(nuevaComida);
+    }
+  }
+  function cambiarAlimento(indiceComida, indiceAlimento, campo, valor) {
+    let comidaActual = comida;
+    if (esDieta) {
+      comidaActual = datos.comidas[indiceComida];
+    }
+    const alimentos = comidaActual.alimentos.slice();
+    const alimento = copiarAlimento(alimentos[indiceAlimento]);
+    alimento[campo] = valor;
+    alimentos[indiceAlimento] = alimento;
+    cambiarComida(indiceComida, "alimentos", alimentos);
   }
   function limpiar() {
     setEditando(null);
@@ -92,37 +134,77 @@ export default function Nutricion({ modo, usuario }) {
     try {
       let cuerpo = datos;
       if (!esDieta) {
-        const fechaReal = fechaConsumo ? new Date(fechaConsumo) : new Date();
+        let fechaReal;
+        if (fechaConsumo) {
+          fechaReal = new Date(fechaConsumo);
+        } else {
+          fechaReal = new Date();
+        }
         if (!Number.isFinite(fechaReal.getTime())) {
           setAviso("Fecha de consumo no válida.");
           return;
         }
-        cuerpo = { ...comida, fecha_consumo: fechaReal.toISOString() };
+        cuerpo = {
+          nombre_comida: comida.nombre_comida,
+          tipo_comida: comida.tipo_comida,
+          hora: comida.hora,
+          alimentos: comida.alimentos,
+          fecha_consumo: fechaReal.toISOString(),
+        };
       }
       const url =
         (esDieta ? "/dietas" : "/consumos") + (editando ? "/" + editando : "");
-      if (editando) await axios.put(url, cuerpo);
-      else await axios.post(url, cuerpo);
+      if (editando) {
+        await axios.put(url, cuerpo);
+      } else {
+        await axios.post(url, cuerpo);
+      }
       limpiar();
       await cargar();
       setAviso(esDieta ? "Dieta guardada." : "Consumo registrado.");
     } catch (error) {
-      setAviso(error.response?.data?.message || "No se pudo guardar.");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo guardar.");
+      }
     } finally {
       setOcupado(false);
     }
   }
+  function copiarComidas(comidasOriginales) {
+    const comidas = [];
+    for (let i = 0; i < comidasOriginales.length; i++) {
+      const copia = copiarComida(comidasOriginales[i]);
+      copia.hora = copia.hora || "08:00";
+      comidas.push(copia);
+    }
+    return comidas;
+  }
   function editar(item) {
     setEditando(item.id);
-    if (esDieta)
+    if (esDieta) {
       setDatos({
-        ...item,
+        nombre: item.nombre,
+        calorias_objetivo: item.calorias_objetivo,
+        proteinas_objetivo_g: item.proteinas_objetivo_g,
+        carbohidratos_objetivo_g: item.carbohidratos_objetivo_g,
+        grasas_objetivo_g: item.grasas_objetivo_g,
         descripcion: item.descripcion || "",
         objetivo_id: item.objetivo_id || "",
-        comidas: item.comidas.map((c) => ({ ...c, hora: c.hora || "08:00" })),
+        comidas: copiarComidas(item.comidas),
       });
-    else {
-      setComida({ ...item, alimentos: item.alimentos });
+    } else {
+      setComida({
+        nombre_comida: item.nombre_comida,
+        tipo_comida: item.tipo_comida,
+        hora: item.hora,
+        alimentos: item.alimentos,
+      });
       const d = new Date(item.fecha_consumo);
       setFechaConsumo(
         new Date(d.getTime() - d.getTimezoneOffset() * 60000)
@@ -130,7 +212,10 @@ export default function Nutricion({ modo, usuario }) {
           .slice(0, 16),
       );
     }
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
   async function eliminar(item, confirmado = false) {
     if (!confirmado) {
@@ -140,15 +225,83 @@ export default function Nutricion({ modo, usuario }) {
     setConfirmacion(null);
     try {
       await axios.delete((esDieta ? "/dietas/" : "/consumos/") + item.id, {
-        data: { confirmar: true },
+        data: {
+          confirmar: true,
+        },
       });
-      if (editando === item.id) limpiar();
+      if (editando === item.id) {
+        limpiar();
+      }
       await cargar();
     } catch (e) {
-      setAviso(e.response?.data?.message || "No se pudo eliminar.");
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudo eliminar.");
+      }
     }
   }
-  const comidas = esDieta ? datos.comidas : [comida];
+  let comidas;
+  if (esDieta) {
+    comidas = datos.comidas;
+  } else {
+    comidas = [comida];
+  }
+  const objetivosDisponibles = [];
+  for (let i = 0; i < objetivos.length; i++) {
+    const objetivo = objetivos[i];
+    if (objetivo.estado === "activo" || objetivo.id === datos.objetivo_id) {
+      objetivosDisponibles.push(objetivo);
+    }
+  }
+  function quitarAlimento(indiceComida, indiceAlimento) {
+    let comidaActual = comida;
+    if (esDieta) {
+      comidaActual = datos.comidas[indiceComida];
+    }
+    const alimentos = [];
+    for (let i = 0; i < comidaActual.alimentos.length; i++) {
+      if (i !== indiceAlimento) {
+        alimentos.push(comidaActual.alimentos[i]);
+      }
+    }
+    cambiarComida(indiceComida, "alimentos", alimentos);
+  }
+  function agregarAlimento(indiceComida) {
+    let comidaActual = comida;
+    if (esDieta) {
+      comidaActual = datos.comidas[indiceComida];
+    }
+    const alimentos = comidaActual.alimentos.slice();
+    alimentos.push(alimentoNuevo());
+    cambiarComida(indiceComida, "alimentos", alimentos);
+  }
+  function actualizarComidas(comidas) {
+    setDatos({
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      objetivo_id: datos.objetivo_id,
+      calorias_objetivo: datos.calorias_objetivo,
+      proteinas_objetivo_g: datos.proteinas_objetivo_g,
+      carbohidratos_objetivo_g: datos.carbohidratos_objetivo_g,
+      grasas_objetivo_g: datos.grasas_objetivo_g,
+      comidas,
+    });
+  }
+  function quitarComida(indice) {
+    const comidas = [];
+    for (let i = 0; i < datos.comidas.length; i++) {
+      if (i !== indice) {
+        comidas.push(datos.comidas[i]);
+      }
+    }
+    actualizarComidas(comidas);
+  }
+  function agregarComida() {
+    const comidas = datos.comidas.slice();
+    comidas.push(comidaNueva());
+    actualizarComidas(comidas);
+  }
   return (
     <main>
       {confirmacion && (
@@ -231,7 +384,16 @@ export default function Nutricion({ modo, usuario }) {
                   maxLength={100}
                   value={datos.nombre}
                   onChange={(e) =>
-                    setDatos({ ...datos, nombre: e.target.value })
+                    setDatos({
+                      descripcion: datos.descripcion,
+                      objetivo_id: datos.objetivo_id,
+                      calorias_objetivo: datos.calorias_objetivo,
+                      proteinas_objetivo_g: datos.proteinas_objetivo_g,
+                      carbohidratos_objetivo_g: datos.carbohidratos_objetivo_g,
+                      grasas_objetivo_g: datos.grasas_objetivo_g,
+                      comidas: datos.comidas,
+                      nombre: e.target.value,
+                    })
                   }
                 />
               </label>
@@ -240,20 +402,24 @@ export default function Nutricion({ modo, usuario }) {
                 <select
                   value={datos.objetivo_id}
                   onChange={(e) =>
-                    setDatos({ ...datos, objetivo_id: e.target.value })
+                    setDatos({
+                      nombre: datos.nombre,
+                      descripcion: datos.descripcion,
+                      calorias_objetivo: datos.calorias_objetivo,
+                      proteinas_objetivo_g: datos.proteinas_objetivo_g,
+                      carbohidratos_objetivo_g: datos.carbohidratos_objetivo_g,
+                      grasas_objetivo_g: datos.grasas_objetivo_g,
+                      comidas: datos.comidas,
+                      objetivo_id: e.target.value,
+                    })
                   }
                 >
                   <option value="">Sin objetivo asociado</option>
-                  {objetivos
-                    .filter(
-                      (o) =>
-                        o.estado === "activo" || o.id === datos.objetivo_id,
-                    )
-                    .map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {o.nombre}
-                      </option>
-                    ))}
+                  {objetivosDisponibles.map((o) => (
+                    <option key={o.id} value={o.id}>
+                      {o.nombre}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
@@ -263,7 +429,16 @@ export default function Nutricion({ modo, usuario }) {
                 maxLength={2000}
                 value={datos.descripcion}
                 onChange={(e) =>
-                  setDatos({ ...datos, descripcion: e.target.value })
+                  setDatos({
+                    nombre: datos.nombre,
+                    objetivo_id: datos.objetivo_id,
+                    calorias_objetivo: datos.calorias_objetivo,
+                    proteinas_objetivo_g: datos.proteinas_objetivo_g,
+                    carbohidratos_objetivo_g: datos.carbohidratos_objetivo_g,
+                    grasas_objetivo_g: datos.grasas_objetivo_g,
+                    comidas: datos.comidas,
+                    descripcion: e.target.value,
+                  })
                 }
               />
             </label>
@@ -284,7 +459,18 @@ export default function Nutricion({ modo, usuario }) {
                     step={campo === "calorias_objetivo" ? "1" : "0.01"}
                     value={datos[campo]}
                     onChange={(e) =>
-                      setDatos({ ...datos, [campo]: Number(e.target.value) })
+                      setDatos({
+                        nombre: datos.nombre,
+                        descripcion: datos.descripcion,
+                        objetivo_id: datos.objetivo_id,
+                        calorias_objetivo: datos.calorias_objetivo,
+                        proteinas_objetivo_g: datos.proteinas_objetivo_g,
+                        carbohidratos_objetivo_g:
+                          datos.carbohidratos_objetivo_g,
+                        grasas_objetivo_g: datos.grasas_objetivo_g,
+                        comidas: datos.comidas,
+                        [campo]: Number(e.target.value),
+                      })
                     }
                   />
                 </label>
@@ -423,13 +609,7 @@ export default function Nutricion({ modo, usuario }) {
                   type="button"
                   className="secundario"
                   disabled={c.alimentos.length === 1}
-                  onClick={() =>
-                    cambiarComida(
-                      ci,
-                      "alimentos",
-                      c.alimentos.filter((_, i) => i !== ai),
-                    )
-                  }
+                  onClick={() => quitarAlimento(ci, ai)}
                 >
                   Quitar alimento
                 </button>
@@ -439,12 +619,7 @@ export default function Nutricion({ modo, usuario }) {
               type="button"
               className="secundario"
               disabled={c.alimentos.length >= 30}
-              onClick={() =>
-                cambiarComida(ci, "alimentos", [
-                  ...c.alimentos,
-                  alimentoNuevo(),
-                ])
-              }
+              onClick={() => agregarAlimento(ci)}
             >
               ＋ Alimento
             </button>
@@ -453,12 +628,7 @@ export default function Nutricion({ modo, usuario }) {
                 type="button"
                 className="secundario"
                 disabled={datos.comidas.length === 1}
-                onClick={() =>
-                  setDatos({
-                    ...datos,
-                    comidas: datos.comidas.filter((_, i) => ci !== i),
-                  })
-                }
+                onClick={() => quitarComida(ci)}
               >
                 Quitar comida
               </button>
@@ -471,12 +641,7 @@ export default function Nutricion({ modo, usuario }) {
               type="button"
               className="secundario"
               disabled={datos.comidas.length >= 15}
-              onClick={() =>
-                setDatos({
-                  ...datos,
-                  comidas: [...datos.comidas, comidaNueva()],
-                })
-              }
+              onClick={() => agregarComida()}
             >
               ＋ Comida
             </button>

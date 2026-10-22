@@ -1,6 +1,8 @@
 export default function Confirmar({ texto, onAceptar, onCancelar }) {
   function teclado(e) {
-    if (e.key === "Escape") onCancelar();
+    if (e.key === "Escape") {
+      onCancelar();
+    }
     if (e.key === "Tab") {
       const botones = e.currentTarget.querySelectorAll("button");
       if (e.shiftKey && document.activeElement === botones[0]) {

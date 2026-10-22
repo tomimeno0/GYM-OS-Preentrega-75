@@ -1,14 +1,14 @@
 const bcrypt = require("bcrypt");
 const crypto = require("node:crypto");
-
 const encriptarIrreversible = (password) => bcrypt.hash(password, 10);
 const compararPassword = (password, hash) => bcrypt.compare(password, hash);
 const tokenNuevo = () => crypto.randomBytes(32).toString("hex");
 const hashToken = (token) =>
   crypto.createHash("sha256").update(token).digest("hex");
-
 function encriptarRreversible(texto) {
-  if (!texto) return null;
+  if (!texto) {
+    return null;
+  }
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(
     "aes-256-gcm",
@@ -27,9 +27,10 @@ function encriptarRreversible(texto) {
     contenido.toString("hex")
   );
 }
-
 function desencriptar(texto) {
-  if (!texto) return "";
+  if (!texto) {
+    return "";
+  }
   const partes = texto.split(":");
   const decipher = crypto.createDecipheriv(
     "aes-256-gcm",
@@ -42,7 +43,6 @@ function desencriptar(texto) {
     decipher.final(),
   ]).toString("utf8");
 }
-
 module.exports = {
   encriptarIrreversible,
   compararPassword,

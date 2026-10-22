@@ -34,65 +34,104 @@ export default function Rutinas() {
       const o = await axios.get("/objetivos");
       setObjetivos(o.data.items);
     } catch (e) {
-      setAviso(
-        e.response?.data?.message || "No se pudieron cargar las rutinas.",
-      );
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudieron cargar las rutinas.");
+      }
     }
   }
   useEffect(() => {
     cargar();
   }, []);
   async function buscar(e, p = 1) {
-    e?.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     try {
       const r = await axios.get("/ejercicios", {
-        params: { buscar: busqueda, pagina: p },
+        params: {
+          buscar: busqueda,
+          pagina: p,
+        },
       });
       setCatalogo(r.data);
       setPagina(p);
     } catch (error) {
-      setAviso(
-        error.response?.data?.message || "No se pudo consultar el catálogo.",
-      );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo consultar el catálogo.");
+      }
     }
   }
+  function copiarEjercicio(ejercicio) {
+    return {
+      nombre_ejercicio: ejercicio.nombre_ejercicio,
+      ejercicio_id: ejercicio.ejercicio_id,
+      dia_semana: ejercicio.dia_semana,
+      series: ejercicio.series,
+      repeticiones: ejercicio.repeticiones,
+      peso_sugerido_kg: ejercicio.peso_sugerido_kg || 0,
+      descanso_segundos: ejercicio.descanso_segundos,
+      observaciones: ejercicio.observaciones || "",
+    };
+  }
   function agregarFicha(ficha) {
+    const ejercicios = datos.ejercicios.slice();
+    const ejercicio = ejercicioNuevo();
+    ejercicio.ejercicio_id = ficha.id;
+    ejercicio.nombre_ejercicio = ficha.name;
+    ejercicios.push(ejercicio);
     setDatos({
-      ...datos,
-      ejercicios: [
-        ...datos.ejercicios,
-        {
-          ...ejercicioNuevo(),
-          ejercicio_id: ficha.id,
-          nombre_ejercicio: ficha.name,
-        },
-      ],
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      objetivo_id: datos.objetivo_id,
+      ejercicios,
     });
     setAviso(
       "Ejercicio agregado al editor. Completá sus datos y guardá la rutina.",
     );
   }
   function cambiarEjercicio(indice, campo, valor) {
+    const ejercicios = datos.ejercicios.slice();
+    const ejercicio = copiarEjercicio(ejercicios[indice]);
+    ejercicio[campo] = valor;
+    ejercicios[indice] = ejercicio;
     setDatos({
-      ...datos,
-      ejercicios: datos.ejercicios.map((e, i) =>
-        i === indice ? { ...e, [campo]: valor } : e,
-      ),
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      objetivo_id: datos.objetivo_id,
+      ejercicios,
     });
   }
-  function editar(r) {
-    setEditando(r.id);
+  function editar(rutina) {
+    const ejercicios = [];
+    for (let i = 0; i < rutina.ejercicios.length; i++) {
+      const ejercicio = copiarEjercicio(rutina.ejercicios[i]);
+      if (
+        ejercicio.descanso_segundos === null ||
+        ejercicio.descanso_segundos === undefined
+      ) {
+        ejercicio.descanso_segundos = 90;
+      }
+      ejercicios.push(ejercicio);
+    }
+    setEditando(rutina.id);
     setDatos({
-      nombre: r.nombre,
-      descripcion: r.descripcion || "",
-      objetivo_id: r.objetivo_id || "",
-      ejercicios: r.ejercicios.map((e) => ({
-        ...e,
-        peso_sugerido_kg: e.peso_sugerido_kg || 0,
-        descanso_segundos: e.descanso_segundos ?? 90,
-      })),
+      nombre: rutina.nombre,
+      descripcion: rutina.descripcion || "",
+      objetivo_id: rutina.objetivo_id || "",
+      ejercicios,
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
   }
   function limpiar() {
     setEditando(null);
@@ -107,20 +146,37 @@ export default function Rutinas() {
     e.preventDefault();
     setOcupado(true);
     setAviso("");
+    const ejercicios = [];
+    for (let i = 0; i < datos.ejercicios.length; i++) {
+      const ejercicio = copiarEjercicio(datos.ejercicios[i]);
+      ejercicio.orden = i;
+      ejercicios.push(ejercicio);
+    }
     const cuerpo = {
-      ...datos,
-      ejercicios: datos.ejercicios.map((e, i) => ({ ...e, orden: i })),
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      objetivo_id: datos.objetivo_id,
+      ejercicios,
     };
     try {
-      if (editando) await axios.put("/rutinas/" + editando, cuerpo);
-      else await axios.post("/rutinas", cuerpo);
+      if (editando) {
+        await axios.put("/rutinas/" + editando, cuerpo);
+      } else {
+        await axios.post("/rutinas", cuerpo);
+      }
       limpiar();
       await cargar();
       setAviso("Rutina guardada.");
     } catch (error) {
-      setAviso(
-        error.response?.data?.message || "No se pudo guardar la rutina.",
-      );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo guardar la rutina.");
+      }
     } finally {
       setOcupado(false);
     }
@@ -132,12 +188,53 @@ export default function Rutinas() {
     }
     setConfirmacion(null);
     try {
-      await axios.delete("/rutinas/" + r.id, { data: { confirmar: true } });
+      await axios.delete("/rutinas/" + r.id, {
+        data: {
+          confirmar: true,
+        },
+      });
       await cargar();
-      if (editando === r.id) limpiar();
+      if (editando === r.id) {
+        limpiar();
+      }
     } catch (e) {
-      setAviso(e.response?.data?.message || "No se pudo dar de baja.");
+      if (e.response && e.response.data && e.response.data.message) {
+        setAviso(e.response.data.message);
+      } else {
+        setAviso("No se pudo dar de baja.");
+      }
     }
+  }
+  const objetivosDisponibles = [];
+  for (let i = 0; i < objetivos.length; i++) {
+    const objetivo = objetivos[i];
+    if (objetivo.estado === "activo" || objetivo.id === datos.objetivo_id) {
+      objetivosDisponibles.push(objetivo);
+    }
+  }
+  function quitarEjercicio(indice) {
+    const ejercicios = [];
+    for (let i = 0; i < datos.ejercicios.length; i++) {
+      if (i !== indice) {
+        ejercicios.push(datos.ejercicios[i]);
+      }
+    }
+    setDatos({
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      objetivo_id: datos.objetivo_id,
+      ejercicios,
+    });
+  }
+  function agregarEjercicioManual() {
+    const ejercicios = datos.ejercicios.slice();
+    ejercicios.push(ejercicioNuevo());
+    setDatos({
+      nombre: datos.nombre,
+      descripcion: datos.descripcion,
+      objetivo_id: datos.objetivo_id,
+      ejercicios,
+    });
   }
   return (
     <main>
@@ -168,7 +265,14 @@ export default function Rutinas() {
               minLength={2}
               maxLength={100}
               value={datos.nombre}
-              onChange={(e) => setDatos({ ...datos, nombre: e.target.value })}
+              onChange={(e) =>
+                setDatos({
+                  descripcion: datos.descripcion,
+                  objetivo_id: datos.objetivo_id,
+                  ejercicios: datos.ejercicios,
+                  nombre: e.target.value,
+                })
+              }
             />
           </label>
           <label>
@@ -176,19 +280,20 @@ export default function Rutinas() {
             <select
               value={datos.objetivo_id}
               onChange={(e) =>
-                setDatos({ ...datos, objetivo_id: e.target.value })
+                setDatos({
+                  nombre: datos.nombre,
+                  descripcion: datos.descripcion,
+                  ejercicios: datos.ejercicios,
+                  objetivo_id: e.target.value,
+                })
               }
             >
               <option value="">Sin objetivo asociado</option>
-              {objetivos
-                .filter(
-                  (o) => o.estado === "activo" || o.id === datos.objetivo_id,
-                )
-                .map((o) => (
-                  <option value={o.id} key={o.id}>
-                    {o.nombre} ({o.estado})
-                  </option>
-                ))}
+              {objetivosDisponibles.map((o) => (
+                <option value={o.id} key={o.id}>
+                  {o.nombre} ({o.estado})
+                </option>
+              ))}
             </select>
           </label>
         </div>
@@ -198,7 +303,12 @@ export default function Rutinas() {
             maxLength={2000}
             value={datos.descripcion}
             onChange={(e) =>
-              setDatos({ ...datos, descripcion: e.target.value })
+              setDatos({
+                nombre: datos.nombre,
+                objetivo_id: datos.objetivo_id,
+                ejercicios: datos.ejercicios,
+                descripcion: e.target.value,
+              })
             }
           />
         </label>
@@ -255,12 +365,7 @@ export default function Rutinas() {
               type="button"
               className="secundario"
               disabled={datos.ejercicios.length === 1}
-              onClick={() =>
-                setDatos({
-                  ...datos,
-                  ejercicios: datos.ejercicios.filter((_, j) => i !== j),
-                })
-              }
+              onClick={() => quitarEjercicio(i)}
             >
               Quitar ejercicio
             </button>
@@ -271,12 +376,7 @@ export default function Rutinas() {
             type="button"
             className="secundario"
             disabled={datos.ejercicios.length >= 80}
-            onClick={() =>
-              setDatos({
-                ...datos,
-                ejercicios: [...datos.ejercicios, ejercicioNuevo()],
-              })
-            }
+            onClick={() => agregarEjercicioManual()}
           >
             ＋ Ejercicio manual
           </button>
@@ -316,7 +416,14 @@ export default function Rutinas() {
                   </small>
                   <details>
                     <summary>Cómo realizarlo</summary>
-                    <p>{f.instructions?.es || f.instructions?.en}</p>
+                    <p>
+                      {(f.instructions !== null &&
+                        f.instructions !== undefined &&
+                        f.instructions.es) ||
+                        (f.instructions !== null &&
+                          f.instructions !== undefined &&
+                          f.instructions.en)}
+                    </p>
                   </details>
                   <button
                     className="secundario"

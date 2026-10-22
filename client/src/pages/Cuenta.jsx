@@ -4,7 +4,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 export default function Cuenta({ usuario, setUsuario }) {
   const [datos, setDatos] = useState({
-    ...usuario,
+    id: usuario.id,
+    nombre: usuario.nombre,
+    email: usuario.email,
+    zona_horaria: usuario.zona_horaria,
+    consentimiento_ia: usuario.consentimiento_ia,
     telefono: usuario.telefono || "",
     apellido: usuario.apellido || "",
     fecha_nacimiento: usuario.fecha_nacimiento || "",
@@ -15,12 +19,25 @@ export default function Cuenta({ usuario, setUsuario }) {
   const [confirmacion, setConfirmacion] = useState(null);
   const [ocupado, setOcupado] = useState(false);
   const navegar = useNavigate();
-  function cambiar(e) {
-    setDatos({
-      ...datos,
-      [e.target.name]:
-        e.target.type === "checkbox" ? e.target.checked : e.target.value,
-    });
+  function cambiar(evento) {
+    const nuevosDatos = {
+      id: datos.id,
+      nombre: datos.nombre,
+      apellido: datos.apellido,
+      email: datos.email,
+      telefono: datos.telefono,
+      genero: datos.genero,
+      fecha_nacimiento: datos.fecha_nacimiento,
+      zona_horaria: datos.zona_horaria,
+      consentimiento_ia: datos.consentimiento_ia,
+    };
+    const campo = evento.target.name;
+    if (evento.target.type === "checkbox") {
+      nuevosDatos[campo] = evento.target.checked;
+    } else {
+      nuevosDatos[campo] = evento.target.value;
+    }
+    setDatos(nuevosDatos);
   }
   async function guardar(e) {
     e.preventDefault();
@@ -31,13 +48,23 @@ export default function Cuenta({ usuario, setUsuario }) {
       setUsuario(r.data.user);
       setAviso("Perfil actualizado.");
     } catch (error) {
-      setAviso(error.response?.data?.message || "No se pudo guardar.");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo guardar.");
+      }
     } finally {
       setOcupado(false);
     }
   }
   async function eliminar(e, confirmado = false) {
-    e?.preventDefault();
+    if (e) {
+      e.preventDefault();
+    }
     if (!confirmado) {
       setConfirmacion(true);
       return;
@@ -45,11 +72,24 @@ export default function Cuenta({ usuario, setUsuario }) {
     setConfirmacion(null);
     setOcupado(true);
     try {
-      await axios.delete("/cuenta", { data: { password, confirmar: true } });
+      await axios.delete("/cuenta", {
+        data: {
+          password,
+          confirmar: true,
+        },
+      });
       setUsuario(null);
       navegar("/");
     } catch (error) {
-      setAviso(error.response?.data?.message || "No se pudo eliminar.");
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo eliminar.");
+      }
     } finally {
       setOcupado(false);
     }

@@ -14,17 +14,33 @@ export default function Acceso({ modo, setUsuario }) {
     setAviso("");
     setOcupado(true);
     try {
-      const datos =
-        modo === "registro"
-          ? { nombre, apellido, email, password }
-          : { email, password };
+      let datos;
+      if (modo === "registro") {
+        datos = {
+          nombre,
+          apellido,
+          email,
+          password,
+        };
+      } else {
+        datos = {
+          email,
+          password,
+        };
+      }
       const r = await axios.post("/" + modo, datos);
       setUsuario(r.data.user);
       navegar("/dashboard");
     } catch (error) {
-      setAviso(
-        error.response?.data?.message || "No se pudo conectar con el servidor.",
-      );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setAviso(error.response.data.message);
+      } else {
+        setAviso("No se pudo conectar con el servidor.");
+      }
     } finally {
       setOcupado(false);
     }

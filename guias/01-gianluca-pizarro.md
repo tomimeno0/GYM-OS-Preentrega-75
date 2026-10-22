@@ -6,10 +6,10 @@ Edición **75**. Tu responsabilidad principal son los **4 endpoints de la tabla 
 
 | Método y ruta completa | Ruta en el código | Handler real | Acceso |
 | --- | --- | --- | --- |
-| `POST /api/registro` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L5) | [registrarUsuario](../controllers/usuarios.controller.js#L51) | Público |
-| `POST /api/login` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L6) | [iniciarSesion](../controllers/usuarios.controller.js#L123) | Público |
-| `POST /api/logout` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L10) | [cerrarSesion](../controllers/usuarios.controller.js#L150) | Sesión requerida |
-| `GET /api/salud` | [index.js](../index.js#L16) | [handler de salud](../index.js#L16) | Público |
+| `POST /api/registro` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L5) | [registrarUsuario](../controllers/usuarios.controller.js#L56) | Público |
+| `POST /api/login` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L6) | [iniciarSesion](../controllers/usuarios.controller.js#L156) | Público |
+| `POST /api/logout` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L10) | [cerrarSesion](../controllers/usuarios.controller.js#L208) | Sesión requerida |
+| `GET /api/salud` | [index.js](../index.js#L22) | [handler de salud](../index.js#L22) | Público |
 
 Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
 
@@ -106,11 +106,11 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 
 | Función auxiliar | Para qué interviene |
 | --- | --- |
-| [datosPublicos](../controllers/usuarios.controller.js#L14) | Selecciona los campos de la respuesta; no es un endpoint. |
-| [abrirSesion](../controllers/usuarios.controller.js#L28) | Crea la sesión y cookie usada por registro/login; no es una ruta separada. |
-| [encriptarIrreversible](../controllers/seguridad.controller.js#L4) | Calcula bcrypt de una contraseña. |
-| [compararPassword](../controllers/seguridad.controller.js#L5) | Compara una contraseña contra el hash. |
-| [hashToken](../controllers/seguridad.controller.js#L7) | Calcula el hash del token de sesión. |
+| [datosPublicos](../controllers/usuarios.controller.js#L13) | Selecciona los campos de la respuesta; no es un endpoint. |
+| [abrirSesion](../controllers/usuarios.controller.js#L26) | Crea la sesión y cookie usada por registro/login; no es una ruta separada. |
+| [encriptarIrreversible](../controllers/seguridad.controller.js#L3) | Calcula bcrypt de una contraseña. |
+| [compararPassword](../controllers/seguridad.controller.js#L4) | Compara una contraseña contra el hash. |
+| [hashToken](../controllers/seguridad.controller.js#L6) | Calcula el hash del token de sesión. |
 
 ## Archivos que tenés que ubicar
 
@@ -118,7 +118,7 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 - [client/src/pages/Acceso.jsx](../client/src/pages/Acceso.jsx): estado, formulario o carga que llama a esas rutas.
 - [client/src/App.jsx](../client/src/App.jsx): estado, formulario o carga que llama a esas rutas.
 - [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L6): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
 
 ## Lo mínimo común para defender estas rutas
 
@@ -139,3 +139,19 @@ Express enlaza rutas con handlers; Sequelize consulta usuarios, roles y sesiones
 - `GET /api/cuenta`: responsable **Simón Castellani**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
 
 Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+
+## Cómo leer el código simplificado
+
+El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
+
+Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
+
+En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
+
+No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
+
+### Tu recorrido, paso a paso
+
+`registrarUsuario` valida, busca correo repetido y calcula el hash. Después empieza una transacción: crea usuario, asigna rol, abre sesión y registra el evento; `commit()` confirma y `rollback()` deshace ante un error. `iniciarSesion` compara con bcrypt, no descifra contraseñas. `verificarSesion` verifica el JWT, busca la sesión no vencida y coloca el usuario en `req.user`. `cerrarSesion` borra esa sesión y la cookie. El endpoint de salud solo prueba MySQL.
+
+Estas son las diferencias respecto del CRUD del repaso que tenés que aprender: bcrypt, JWT/cookie y el guardado conjunto. No necesitás implementar algoritmos criptográficos. La cookie `httpOnly` evita leer el token desde JavaScript de la pantalla; la clave del servidor no va al frontend.

@@ -6,10 +6,10 @@ Edición **75**. Tu responsabilidad principal son los **4 endpoints de la tabla 
 
 | Método y ruta completa | Ruta en el código | Handler real | Acceso |
 | --- | --- | --- | --- |
-| `GET /api/consumos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L31) | [verMacros](../controllers/nutricion.controller.js#L290) | Sesión requerida |
-| `POST /api/consumos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L32) | [registrarComida](../controllers/nutricion.controller.js#L242) | Sesión requerida |
-| `PUT /api/consumos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L33) | [registrarComida](../controllers/nutricion.controller.js#L242) | Sesión requerida |
-| `DELETE /api/consumos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L34) | [eliminarConsumo](../controllers/nutricion.controller.js#L335) | Sesión requerida |
+| `GET /api/consumos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L31) | [verMacros](../controllers/nutricion.controller.js#L404) | Sesión requerida |
+| `POST /api/consumos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L32) | [registrarComida](../controllers/nutricion.controller.js#L340) | Sesión requerida |
+| `PUT /api/consumos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L33) | [registrarComida](../controllers/nutricion.controller.js#L340) | Sesión requerida |
+| `DELETE /api/consumos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L34) | [eliminarConsumo](../controllers/nutricion.controller.js#L472) | Sesión requerida |
 
 Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
 
@@ -106,15 +106,15 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 
 | Función auxiliar | Para qué interviene |
 | --- | --- |
-| [datosComida](../controllers/nutricion.controller.js#L65) | Valida nombre/tipo y obtiene nutrientes calculados. |
-| [calcularMacros](../controllers/nutricion.controller.js#L5) | Suma nutrientes proporcionales a la cantidad, con redondeo. |
+| [datosComida](../controllers/nutricion.controller.js#L79) | Valida nombre/tipo y obtiene nutrientes calculados. |
+| [calcularMacros](../controllers/nutricion.controller.js#L4) | Suma nutrientes proporcionales a la cantidad, con redondeo. |
 
 ## Archivos que tenés que ubicar
 
 - [controllers/nutricion.controller.js](../controllers/nutricion.controller.js): handlers y lógica de tus endpoints.
 - [client/src/pages/Nutricion.jsx](../client/src/pages/Nutricion.jsx): estado, formulario o carga que llama a esas rutas.
 - [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L6): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
 
 ## Lo mínimo común para defender estas rutas
 
@@ -135,3 +135,21 @@ Express y Sequelize guardan/consultan consumo. Intl resuelve el día local; Math
 - Si necesitás datos de otra funcionalidad, consultá el índice general. Un `findAll` interno de tu controlador no equivale a llamar por HTTP a otro endpoint.
 
 Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+
+## Cómo leer el código simplificado
+
+El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
+
+Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
+
+En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
+
+No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
+
+### Tu recorrido, paso a paso
+
+`calcularMacros` recorre alimentos y nutrientes con dos bucles tradicionales. Valida cantidad y unidad. Para gramos o mililitros calcula `nutriente * cantidad / 100`; para porciones divide por 1. Suma cada nutriente y al final redondea calorías a entero y macros a dos decimales. El servidor recalcula; no confía en un total enviado por el navegador.
+
+En React, `copiarAlimento` y `copiarComida` enumeran campos. `cambiarAlimento` copia una lista con `slice`, modifica la copia elegida y llama a `cambiarComida`. `quitarAlimento` y `quitarComida` recorren y conservan los elementos restantes. `agregarAlimento` y `agregarComida` copian y agregan con `push`. `actualizarComidas` reúne los campos de la dieta para actualizar su estado. `map` solo dibuja los campos y registros.
+
+`registrarComida` guarda lo consumido. `verMacros` recorre los consumos, conserva los del día local del usuario y suma los nutrientes. La dieta vigente se devuelve como referencia, no como consumo.

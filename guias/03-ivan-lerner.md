@@ -6,9 +6,9 @@ Edición **75**. Tu responsabilidad principal son los **3 endpoints de la tabla 
 
 | Método y ruta completa | Ruta en el código | Handler real | Acceso |
 | --- | --- | --- | --- |
-| `GET /api/entrenamientos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L24) | [listarEntrenamientos](../controllers/entrenamientos.controller.js#L9) | Sesión requerida |
-| `POST /api/entrenamientos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L25) | [iniciarEntrenamiento](../controllers/entrenamientos.controller.js#L24) | Sesión requerida |
-| `PUT /api/entrenamientos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L26) | [actualizarRegistro](../controllers/entrenamientos.controller.js#L93) | Sesión requerida |
+| `GET /api/entrenamientos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L24) | [listarEntrenamientos](../controllers/entrenamientos.controller.js#L8) | Sesión requerida |
+| `POST /api/entrenamientos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L25) | [iniciarEntrenamiento](../controllers/entrenamientos.controller.js#L39) | Sesión requerida |
+| `PUT /api/entrenamientos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L26) | [actualizarRegistro](../controllers/entrenamientos.controller.js#L140) | Sesión requerida |
 
 Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
 
@@ -36,7 +36,7 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Qué recibe.** Sin body ni filtros por fecha en el endpoint actual.
 
-**Qué ejecuta y consulta.** `Entrenamiento.findAll` propio con `include` de `EntrenamientoEjercicio`, ordenado por inicio descendente; ordena detalles por posición.
+**Qué ejecuta y consulta.** `Entrenamiento.findAll` propio con `include` de `EntrenamientoEjercicio`, con `order` que pide a MySQL inicio descendente y posición ascendente de los detalles. No usa `for...of` ni `sort((a,b) => ...)` para reordenarlos después.
 
 **Qué valida o decide.** Devuelve también el iniciado. El frontend separa la sesión en curso del historial cerrado.
 
@@ -93,7 +93,7 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 - [controllers/entrenamientos.controller.js](../controllers/entrenamientos.controller.js): handlers y lógica de tus endpoints.
 - [client/src/pages/Entrenamientos.jsx](../client/src/pages/Entrenamientos.jsx): estado, formulario o carga que llama a esas rutas.
 - [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L6): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
 
 ## Lo mínimo común para defender estas rutas
 
@@ -114,3 +114,23 @@ Express y Sequelize consultan planes y guardan sesión/ejercicios. Las transacci
 - `GET /api/rutinas`: responsable **Joaquín Casanou**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
 
 Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+
+## Cómo leer el código simplificado
+
+El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
+
+Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
+
+En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
+
+No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
+
+### Tu recorrido, paso a paso
+
+`listarEntrenamientos` ya no recorre y ordena en JavaScript. El `order` de Sequelize solicita a MySQL entrenamientos por `fecha_inicio DESC` y sus ejercicios por `orden ASC`. `include` trae los detalles relacionados.
+
+`iniciarEntrenamiento` busca una rutina propia y sus ejercicios del día. Recorre los ejercicios con un `for` tradicional y crea una copia para ese entrenamiento. Todo se guarda junto dentro de una transacción. Cambiar después la rutina no cambia esa copia histórica.
+
+`actualizarRegistro` recorre cada ejercicio recibido; un segundo bucle busca su id entre los originales. Rechaza ids ajenos y repetidos y cuenta `cantidadRealizados`. Completado exige todos; incompleto exige al menos uno. Para guardar, vuelve a comprobar el entrenamiento dentro de la transacción con un bloqueo de fila, actualiza detalles y cabecera y confirma. Si falla, revierte. El bloqueo evita que dos pedidos cierren simultáneamente la misma sesión; no es una capa nueva.
+
+En React, `cargar` busca el iniciado con un bucle y prepara las rutinas activas. `cambiar` copia la lista con `slice`, construye el ejercicio modificado y llama a `setActual` con un objeto nuevo. `entrenamientosAnteriores` separa el historial antes de dibujarlo.

@@ -10,17 +10,46 @@ import {
   CartesianGrid,
   Tooltip,
 } from "recharts";
+function mostrarValorActual(valor) {
+  if (valor === null || valor === undefined) {
+    return "Sin medición";
+  }
+  return valor;
+}
 export default function Progreso({ usuario }) {
   const [datos, setDatos] = useState(null);
   const [error, setError] = useState("");
+  async function cargar() {
+    try {
+      const respuesta = await axios.get("/progreso");
+      setDatos(respuesta.data);
+    } catch (error) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        setError(error.response.data.message);
+      } else {
+        setError("No se pudo cargar el resumen.");
+      }
+    }
+  }
   useEffect(() => {
-    axios
-      .get("/progreso")
-      .then((r) => setDatos(r.data))
-      .catch((e) =>
-        setError(e.response?.data?.message || "No se pudo cargar el resumen."),
-      );
+    cargar();
   }, []);
+  const puntosMediciones = [];
+  if (datos) {
+    for (let i = 0; i < datos.mediciones.length; i++) {
+      const m = datos.mediciones[i];
+      puntosMediciones.push({
+        fecha: new Date(m.fecha_medicion).toLocaleDateString("es-AR", {
+          timeZone: usuario.zona_horaria,
+        }),
+        peso: m.peso_kg,
+      });
+    }
+  }
   return (
     <main>
       <p className="etiqueta">TU PRÓXIMO PASO</p>
@@ -54,15 +83,7 @@ export default function Progreso({ usuario }) {
               {datos.mediciones.length ? (
                 <div className="grafico">
                   <ResponsiveContainer width="100%" height={250}>
-                    <LineChart
-                      data={datos.mediciones.map((m) => ({
-                        fecha: new Date(m.fecha_medicion).toLocaleDateString(
-                          "es-AR",
-                          { timeZone: usuario.zona_horaria },
-                        ),
-                        peso: m.peso_kg,
-                      }))}
-                    >
+                    <LineChart data={puntosMediciones}>
                       <CartesianGrid stroke="#30363e" />
                       <XAxis dataKey="fecha" stroke="#a5adb9" />
                       <YAxis domain={["auto", "auto"]} stroke="#a5adb9" />
@@ -99,7 +120,7 @@ export default function Progreso({ usuario }) {
                     <span className="badge">{o.estado}</span>
                     <h3>{o.nombre}</h3>
                     <p>
-                      {o.valor_actual ?? "Sin medición"} / {o.valor_objetivo}{" "}
+                      {mostrarValorActual(o.valor_actual)} / {o.valor_objetivo}{" "}
                       {o.unidad}
                     </p>
                     <progress

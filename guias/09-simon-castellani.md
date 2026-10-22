@@ -6,9 +6,9 @@ Edición **75**. Tu responsabilidad principal son los **3 endpoints de la tabla 
 
 | Método y ruta completa | Ruta en el código | Handler real | Acceso |
 | --- | --- | --- | --- |
-| `GET /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L7) | [verCuenta](../controllers/usuarios.controller.js#L167) | Sesión requerida |
-| `PUT /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L8) | [actualizarDatos](../controllers/usuarios.controller.js#L171) | Sesión requerida |
-| `DELETE /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L9) | [eliminarCuenta](../controllers/usuarios.controller.js#L228) | Sesión requerida |
+| `GET /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L7) | [verCuenta](../controllers/usuarios.controller.js#L233) | Sesión requerida |
+| `PUT /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L8) | [actualizarDatos](../controllers/usuarios.controller.js#L238) | Sesión requerida |
+| `DELETE /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L9) | [eliminarCuenta](../controllers/usuarios.controller.js#L306) | Sesión requerida |
 
 Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
 
@@ -86,10 +86,10 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 
 | Función auxiliar | Para qué interviene |
 | --- | --- |
-| [datosPublicos](../controllers/usuarios.controller.js#L14) | Selecciona los campos de la respuesta; no es un endpoint. |
-| [compararPassword](../controllers/seguridad.controller.js#L5) | Compara una contraseña contra el hash. |
-| [encriptarRreversible](../controllers/seguridad.controller.js#L10) | Cifra el teléfono. |
-| [desencriptar](../controllers/seguridad.controller.js#L31) | Recupera el teléfono para mostrarlo. |
+| [datosPublicos](../controllers/usuarios.controller.js#L13) | Selecciona los campos de la respuesta; no es un endpoint. |
+| [compararPassword](../controllers/seguridad.controller.js#L4) | Compara una contraseña contra el hash. |
+| [encriptarRreversible](../controllers/seguridad.controller.js#L8) | Cifra el teléfono. |
+| [desencriptar](../controllers/seguridad.controller.js#L30) | Recupera el teléfono para mostrarlo. |
 
 ## Archivos que tenés que ubicar
 
@@ -97,7 +97,7 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 - [client/src/App.jsx](../client/src/App.jsx): estado, formulario o carga que llama a esas rutas.
 - [client/src/pages/Cuenta.jsx](../client/src/pages/Cuenta.jsx): estado, formulario o carga que llama a esas rutas.
 - [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L6): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
 
 ## Lo mínimo común para defender estas rutas
 
@@ -118,3 +118,21 @@ Express y Sequelize leen/actualizan la cuenta; bcrypt comprueba la contraseña a
 - `POST /api/logout`: responsable **Gianluca Pizarro**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
 
 Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+
+## Cómo leer el código simplificado
+
+El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
+
+Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
+
+En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
+
+No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
+
+### Tu recorrido, paso a paso
+
+`verCuenta` prepara datos públicos sin devolver el hash de contraseña. `actualizarDatos` valida el perfil y cifra el teléfono antes de guardar. `eliminarCuenta` verifica la contraseña y la confirmación; elimina los datos relacionados dentro de una transacción y limpia la cookie.
+
+En React, `cambiar` crea `nuevosDatos` con campos explícitos, toma el nombre del input y usa `if` para distinguir checkbox de texto. Después llama a `setDatos`; no modifica directamente el objeto anterior. Las llamadas a guardar y eliminar tienen sus propios `try/catch`.
+
+La parte adicional que sí tenés que conocer es la diferencia entre hash y cifrado: bcrypt comprueba contraseñas sin recuperarlas; AES permite recuperar el teléfono con la clave del servidor. `encriptarRreversible` y `desencriptar` están aisladas en seguridad.controller.js. Se conservó AES para no exponer teléfonos ni volver ilegibles los datos existentes. No necesitás estudiar la matemática del algoritmo, pero sí sus entradas, salidas y dónde se mantiene la clave.

@@ -6,11 +6,11 @@ Edición **75**. Tu responsabilidad principal son los **5 endpoints de la tabla 
 
 | Método y ruta completa | Ruta en el código | Handler real | Acceso |
 | --- | --- | --- | --- |
-| `GET /api/ejercicios` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L23) | [listarEjercicios](../controllers/rutinas.controller.js#L215) | Sesión requerida |
-| `GET /api/rutinas` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L19) | [listarRutinas](../controllers/rutinas.controller.js#L105) | Sesión requerida |
-| `POST /api/rutinas` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L20) | [actualizarRutina](../controllers/rutinas.controller.js#L124) | Sesión requerida |
-| `PUT /api/rutinas/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L21) | [actualizarRutina](../controllers/rutinas.controller.js#L124) | Sesión requerida |
-| `DELETE /api/rutinas/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L22) | [eliminarRutina](../controllers/rutinas.controller.js#L185) | Sesión requerida |
+| `GET /api/ejercicios` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L23) | [listarEjercicios](../controllers/rutinas.controller.js#L367) | Sesión requerida |
+| `GET /api/rutinas` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L19) | [listarRutinas](../controllers/rutinas.controller.js#L177) | Sesión requerida |
+| `POST /api/rutinas` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L20) | [actualizarRutina](../controllers/rutinas.controller.js#L229) | Sesión requerida |
+| `PUT /api/rutinas/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L21) | [actualizarRutina](../controllers/rutinas.controller.js#L229) | Sesión requerida |
+| `DELETE /api/rutinas/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L22) | [eliminarRutina](../controllers/rutinas.controller.js#L324) | Sesión requerida |
 
 Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
 
@@ -60,7 +60,7 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Qué recibe.** Sin body.
 
-**Qué ejecuta y consulta.** `Rutina.findAll` por usuario y estado distinto de eliminada, con `include` de `RutinaEjercicio`. Ordena rutinas y ejercicios por día/orden; normaliza el día a número.
+**Qué ejecuta y consulta.** `Rutina.findAll` por usuario y estado distinto de eliminada, con `include` de `RutinaEjercicio`. El `order` de Sequelize pide a MySQL rutinas por fecha y ejercicios por día/posición. Un bucle tradicional convierte cada rutina a JSON y normaliza el día a número; ya no hay comparador `sort`.
 
 **Qué valida o decide.** No hay un `GET /rutinas/:id`: este listado ya trae los detalles y la interfaz muestra cada rutina.
 
@@ -126,18 +126,18 @@ Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asi
 
 | Función auxiliar | Para qué interviene |
 | --- | --- |
-| [validarEjercicios](../controllers/rutinas.controller.js#L11) | Revisa los ejercicios y toma datos fiables del catálogo. |
-| [guardarRutina](../controllers/rutinas.controller.js#L89) | Guarda cabecera y detalles para creación/edición manual y, solo en el 75, IA. |
-| [actualizarRutinaEjercicio](../controllers/rutinas.controller.js#L84) | Reemplaza la lista de ejercicios dentro de una transacción. |
-| [agregarEjercicio](../controllers/rutinas.controller.js#L78) | Inserta un detalle; no es un POST HTTP separado. |
-| [eliminarEjercicio](../controllers/rutinas.controller.js#L81) | Elimina detalles durante el reemplazo; no es DELETE /ejercicios. |
+| [validarEjercicios](../controllers/rutinas.controller.js#L10) | Revisa los ejercicios y toma datos fiables del catálogo. |
+| [guardarRutina](../controllers/rutinas.controller.js#L147) | Guarda cabecera y detalles para creación/edición manual y, solo en el 75, IA. |
+| [actualizarRutinaEjercicio](../controllers/rutinas.controller.js#L140) | Reemplaza la lista de ejercicios dentro de una transacción. |
+| [agregarEjercicio](../controllers/rutinas.controller.js#L114) | Inserta un detalle; no es un POST HTTP separado. |
+| [eliminarEjercicio](../controllers/rutinas.controller.js#L132) | Elimina detalles durante el reemplazo; no es DELETE /ejercicios. |
 
 ## Archivos que tenés que ubicar
 
 - [controllers/rutinas.controller.js](../controllers/rutinas.controller.js): handlers y lógica de tus endpoints.
 - [client/src/pages/Rutinas.jsx](../client/src/pages/Rutinas.jsx): estado, formulario o carga que llama a esas rutas.
 - [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L6): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
 
 ## Lo mínimo común para defender estas rutas
 
@@ -158,3 +158,25 @@ React y Axios buscan y muestran fichas; Express conecta con el controlador. El c
 - `GET /api/objetivos`: responsable **Paulo López**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
 
 Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+
+## Cómo leer el código simplificado
+
+El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
+
+Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
+
+En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
+
+No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
+
+### Tu recorrido, paso a paso
+
+`listarEjercicios` recorre el catálogo local y agrega los que coinciden con texto y grupo. La paginación usa `slice`. El `sort()` restante ordena nombres de grupos alfabéticamente sin callback ni comparador numérico. No consulta una API externa.
+
+`listarRutinas` pide el orden por fecha/día/posición directamente a MySQL; después recorre registros para convertirlos a JSON y normalizar el día.
+
+### Tu recorrido, paso a paso
+
+`validarEjercicios` recorre la lista con un bucle; si hay un id de catálogo, otro bucle busca la ficha y toma su nombre fiable. Valida rangos y posiciones repetidas y agrega cada ejercicio correcto a `ejerciciosValidados`. No usa `map` ni `find`. `actualizarRutina` diferencia crear de editar con `if`, valida el objetivo y abre una transacción. `guardarRutina` guarda la cabecera y `actualizarRutinaEjercicio` reemplaza los detalles. `commit` confirma todo; `rollback` revierte si falla un detalle.
+
+En React, `copiarEjercicio` enumera los campos. `cambiarEjercicio` copia la lista con `slice` y reemplaza una posición. `quitarEjercicio` recorre y conserva todas menos la elegida; `agregarEjercicioManual` hace una copia y agrega con `push`. `guardar` recorre los ejercicios y asigna su posición `orden` antes del pedido HTTP. La lista de objetivos disponibles se prepara con otro bucle antes de dibujar el selector.
