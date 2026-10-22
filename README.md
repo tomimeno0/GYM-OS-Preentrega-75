@@ -42,7 +42,7 @@ Cohere se llama desde el backend, con clave privada en .env y consentimiento en 
 
 ## Estudiar y revisar
 
-[Las nueve guías](guias/README.md) contienen archivos, funciones, diagramas y un recorrido de defensa por funcionalidad. Son responsabilidades de estudio y revisión; no certifican que cada integrante haya escrito el código.
+[Las nueve guías](guias/README.md) reparten los 37 endpoints reales entre nueve responsables principales. Cada MD indica método/ruta, entrada, handler, consultas, respuestas, errores, pantalla que lo llama y su diagrama. El reparto es para estudiar y defender, no una certificación de autoría.
 
 [Mapa de operaciones UML](docs/METODOS-UML.md) · [Plan de reescritura](docs/PLAN.md) · [Verificación y límites](docs/VERIFICACION.md)
 
