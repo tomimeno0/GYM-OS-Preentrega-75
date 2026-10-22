@@ -11,19 +11,6 @@ app.use(express.json({ limit: "200kb" }));
 app.use(cookieParser());
 app.use("/api", (req, res, next) => {
   res.setHeader("Cache-Control", "no-store");
-  if (["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
-    const origenes = [
-      process.env.APP_ORIGIN || "http://localhost:5175",
-      "http://localhost:5176",
-    ];
-    if (
-      req.get("X-GYM-OS") !== "75" ||
-      (req.get("Origin") && !origenes.includes(req.get("Origin")))
-    )
-      return res
-        .status(403)
-        .json({ message: "La solicitud no viene de la aplicación." });
-  }
   next();
 });
 app.get("/api/salud", async (req, res) => {

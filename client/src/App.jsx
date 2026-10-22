@@ -20,7 +20,6 @@ import Nutricion from "./pages/Nutricion";
 import Asistente from "./pages/Asistente";
 axios.defaults.baseURL = "/api";
 axios.defaults.withCredentials = true;
-axios.defaults.headers.common["X-GYM-OS"] = "75";
 export default function App() {
   const [usuario, setUsuario] = useState(null);
   const [cargando, setCargando] = useState(true);
@@ -110,12 +109,12 @@ export default function App() {
             path="/"
             element={usuario ? <Navigate to="/dashboard" /> : <Inicio />}
           />
-          {["login", "registro", "recuperar", "restablecer"].map((modo) => (
+          {["login", "registro"].map((modo) => (
             <Route
               key={modo}
               path={"/" + modo}
               element={
-                usuario && modo !== "restablecer" ? (
+                usuario ? (
                   <Navigate to="/dashboard" />
                 ) : (
                   <Acceso modo={modo} setUsuario={setUsuario} />

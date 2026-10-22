@@ -11,7 +11,6 @@ const Dieta = require("./Dieta.model");
 const DietaComida = require("./DietaComida.model");
 const ComidaConsumida = require("./ComidaConsumida.model");
 const Sesion = require("./Sesion.model");
-const Recuperacion = require("./Recuperacion.model");
 const Conversacion = require("./Conversacion.model");
 const Mensaje = require("./Mensaje.model");
 const Bitacora = require("./Bitacora.model");
@@ -80,11 +79,6 @@ Usuario.hasMany(ComidaConsumida, {
 ComidaConsumida.belongsTo(Usuario, { foreignKey: "usuario_id" });
 Usuario.hasMany(Sesion, { foreignKey: "usuario_id", onDelete: "CASCADE" });
 Sesion.belongsTo(Usuario, { foreignKey: "usuario_id" });
-Usuario.hasMany(Recuperacion, {
-  foreignKey: "usuario_id",
-  onDelete: "CASCADE",
-});
-Recuperacion.belongsTo(Usuario, { foreignKey: "usuario_id" });
 Usuario.hasMany(Conversacion, {
   foreignKey: "usuario_id",
   onDelete: "CASCADE",
@@ -112,7 +106,6 @@ module.exports = {
   DietaComida,
   ComidaConsumida,
   Sesion,
-  Recuperacion,
   Conversacion,
   Mensaje,
   Bitacora,

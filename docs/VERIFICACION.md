@@ -1,31 +1,19 @@
-# Verificación de esta copia
+# Verificación · edición 75
 
-Revisión local del 22 de octubre de 2026, con datos sintéticos y una base MySQL separada. No es una certificación de ausencia de bugs ni una afirmación de cumplimiento de todas las condiciones del sistema completo.
+Revisión del recorte actual del 22 de octubre de 2026, con cuentas sintéticas y MySQL real. No certifica todas las alternativas de los diagramas ni ausencia de bugs.
 
-## Funcionamiento comprobado
+## API y base
 
-Se ejecutó un recorrido de 57 solicitudes HTTP contra Express y MySQL reales: registro, acceso incorrecto/correcto, campos públicos, rechazo de contraseña que excede el límite de bcrypt, perfil y fechas, consentimiento, medidas iniciales/posteriores, objetivo único, catálogo, rutina manual y edición, inicio/cierre de entrenamiento, dieta manual, consumos/macros, cierre de sesión y recuperación de un solo uso. Se comprobaron rechazos al intentar operar con registros de otra cuenta. La baja de una cuenta sintética con datos en todos los módulos eliminó sus dependencias y revocó el acceso.
+Se completaron **82 solicitudes HTTP** y 13 comprobaciones agrupadas: registro/login, perfil, mediciones e historial, objetivos, rutinas, copia de ejercicios al entrenar, cierre de sesión y separación entre cuentas. Las escrituras funcionan sin la cabecera especial ni el control de origen retirados. Más de 40 intentos de ingreso incorrectos no activan un limitador. Las rutas eliminadas devuelven 404 para una sesión válida; no hay modelo ni tabla activa de esa función. El perfil público no revela hashes y los filtros de propiedad siguen funcionando.
 
-Se probaron además un fallo de base durante la inserción del segundo ejercicio (sin cabecera ni detalle parcial), dos inicios de entrenamiento concurrentes (solo uno aceptado), consumo UTC cercano a medianoche en Buenos Aires, origen ajeno rechazado y separación de conversaciones. El fallo sintético se eliminó al terminar la prueba.
+Se verificó que una edición inválida no cambie la rutina, que no haya dos entrenamientos activos para una cuenta y que una medición posterior no altere el progreso de un objetivo completado.
 
-Un objetivo completado conserva el instante de cierre en `fecha_cierre`: se probó que una medición posterior, incluso del mismo día, no cambie su progreso. La fecha visible `fecha_completado` se conserva por separado. Es un campo auxiliar explícito agregado al modelo, no un sistema de migraciones.
+El chat respondió mediante Cohere real y conservó la conversación. Una segunda cuenta no pudo abrirla. Una prueba visual detectó una indicación de menú incorrecta: se incluyó el mapa real de navegación en el prompt y se volvió a comprobar con el proveedor la respuesta Entrenamientos / Tu historial. Eso no garantiza que un modelo nunca se equivoque. No hay respuesta simulada, modelo local ni reintento automático.
 
-La IA se probó con Cohere real: consulta de soporte, seguimiento con historial, generación de rutina y adaptación de la misma rutina. Se verificó persistencia de mensajes y ejercicios; no se usó un modelo local ni una respuesta simulada. También se levantó temporalmente una instancia sin clave: devolvió error 503, indicó que no pudo responder y no creó una conversación. Disponibilidad futura, límites gratuitos y calidad de propuestas dependen del proveedor.
+Se verificaron también dietas manuales, consumo, cálculo de macros proporcional a la cantidad e imposibilidad de dar de baja una dieta ajena. Se retiró solamente la tabla correspondiente a la función eliminada; las demás tablas de esta edición se conservaron.
 
-## Interfaz real
+## Pantallas y ejecución
 
-Se abrió la aplicación compilada en el navegador integrado. Desde las pantallas se inició sesión, agregó una medición, creó y editó una rutina, inició y completó un entrenamiento, creó una dieta, canceló su baja y registró un consumo cuya cantidad produjo el total esperado. Una consulta enviada desde el chat recibió respuesta real de Cohere.
+Se recargó la aplicación compilada, cerró sesión y abrió el acceso nuevo: solo ofrece ingreso y registro, sin enlaces al flujo retirado. [Captura del acceso](capturas/acceso-recorte.png). Los recorridos de la edición anterior no sustituyen una certificación visual de todos los estados del recorte actual.
 
-Se revisó la página de inicio, el resumen de escritorio, el chat y el resumen móvil. Las nueve pantallas protegidas se recorrieron a 390 px: ninguna amplió el ancho del documento. Eso comprueba el ancho, no todas las combinaciones de dispositivos, teclados o lectores de pantalla.
-
-Los diálogos nativos que bloquearon una prueba se reemplazaron por confirmaciones dentro de la página. Se comprobó aceptar y cancelar sin recurrir a `window.confirm`. La confirmación admite Escape y mantiene Tab dentro de sus dos botones.
-
-Capturas con datos sintéticos: [resumen de escritorio](capturas/resumen.png), [resumen móvil](capturas/resumen-movil.png) y [chat móvil](capturas/asistente-movil.png).
-
-## Entrega y límites
-
-La compilación terminó correctamente. Las auditorías de dependencias de npm no informaron vulnerabilidades conocidas en los dos proyectos al ejecutar la revisión. Se actualizó Vite por los avisos de seguridad detectados en la versión inicial. El compilador advierte que el archivo JavaScript principal supera 500 kB; se conserva una organización simple, sin agregar carga diferida solo para silenciar ese aviso.
-
-La inicialización de tablas se ejecutó sin borrar tablas. El esquema SQL exportado contiene estructura, no datos ni contraseñas. Se revisaron enlaces locales de guías y documentación. Los scripts de prueba, cuentas sintéticas y resultados detallados están fuera del código versionado.
-
-No se probaron entrega SMTP real, cargas de producción, todos los navegadores ni todas las alternativas del PDF original. La aplicación no tiene administración, dieta IA ni el sistema de DVH/DVV de la arquitectura anterior. Ver [ALCANCE.md](ALCANCE.md). Las entregas anteriores permanecen separadas.
+Ambos proyectos compilaron. npm audit no informó vulnerabilidades conocidas en backend y frontend en esta revisión. Vite mantiene el aviso de archivo principal superior a 500 kB; no es un error de compilación. Se verifican enlaces de documentación, nueve guías por versión y ausencia de secretos y suites de tests en los archivos versionados. No se prueba producción ni concurrencia masiva; al quitar los controles solicitados, no debe exponerse este servidor como un servicio público.

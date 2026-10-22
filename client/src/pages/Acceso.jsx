@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 export default function Acceso({ modo, setUsuario }) {
   const [nombre, setNombre] = useState("");
@@ -8,7 +8,6 @@ export default function Acceso({ modo, setUsuario }) {
   const [password, setPassword] = useState("");
   const [aviso, setAviso] = useState("");
   const [ocupado, setOcupado] = useState(false);
-  const [parametros] = useSearchParams();
   const navegar = useNavigate();
   async function enviar(e) {
     e.preventDefault();
@@ -18,19 +17,10 @@ export default function Acceso({ modo, setUsuario }) {
       const datos =
         modo === "registro"
           ? { nombre, apellido, email, password }
-          : modo === "restablecer"
-            ? { token: parametros.get("token"), password }
-            : modo === "recuperar"
-              ? { email }
-              : { email, password };
+          : { email, password };
       const r = await axios.post("/" + modo, datos);
-      if (r.data.user) {
-        setUsuario(r.data.user);
-        navegar("/dashboard");
-      } else {
-        setAviso(r.data.message);
-        setPassword("");
-      }
+      setUsuario(r.data.user);
+      navegar("/dashboard");
     } catch (error) {
       setAviso(
         error.response?.data?.message || "No se pudo conectar con el servidor.",
@@ -39,20 +29,18 @@ export default function Acceso({ modo, setUsuario }) {
       setOcupado(false);
     }
   }
-  const titulo = {
-    registro: "Tu próximo paso empieza acá.",
-    login: "Volvé a tu ritmo.",
-    recuperar: "Recuperá tu acceso.",
-    restablecer: "Elegí una contraseña nueva.",
-  }[modo];
   return (
-    <main className="acceso" key={modo}>
+    <main className="acceso">
       <Link className="marca" to="/">
         GYM<span>—</span>OS
       </Link>
       <div className="tarjeta acceso-form">
         <p className="etiqueta">TU ESPACIO PERSONAL</p>
-        <h1>{titulo}</h1>
+        <h1>
+          {modo === "registro"
+            ? "Tu próximo paso empieza acá."
+            : "Volvé a tu ritmo."}
+        </h1>
         <form onSubmit={enviar}>
           {modo === "registro" && (
             <div className="grilla dos">
@@ -76,38 +64,34 @@ export default function Acceso({ modo, setUsuario }) {
               </label>
             </div>
           )}
-          {modo !== "restablecer" && (
-            <label>
-              Correo electrónico
-              <input
-                required
-                type="email"
-                autoComplete="email"
-                maxLength={150}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </label>
-          )}
-          {modo !== "recuperar" && (
-            <label>
-              Contraseña
-              <input
-                required
-                type="password"
-                autoComplete={
-                  modo === "login" ? "current-password" : "new-password"
-                }
-                minLength={modo === "login" ? 1 : 10}
-                maxLength={72}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-              <small>
-                10 caracteres como mínimo al crearla; máximo 72 bytes.
-              </small>
-            </label>
-          )}
+          <label>
+            Correo electrónico
+            <input
+              required
+              type="email"
+              autoComplete="email"
+              maxLength={150}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </label>
+          <label>
+            Contraseña
+            <input
+              required
+              type="password"
+              autoComplete={
+                modo === "login" ? "current-password" : "new-password"
+              }
+              minLength={modo === "login" ? 1 : 10}
+              maxLength={72}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <small>
+              10 caracteres como mínimo al crearla; máximo 72 bytes.
+            </small>
+          </label>
           {aviso && (
             <p role="status" className="aviso">
               {aviso}
@@ -116,23 +100,15 @@ export default function Acceso({ modo, setUsuario }) {
           <button disabled={ocupado}>
             {ocupado
               ? "Procesando…"
-              : {
-                  login: "Iniciar sesión",
-                  registro: "Crear mi cuenta",
-                  recuperar: "Enviar enlace",
-                  restablecer: "Guardar contraseña",
-                }[modo]}
+              : modo === "login"
+                ? "Iniciar sesión"
+                : "Crear mi cuenta"}
           </button>
         </form>
         <div className="enlaces">
           <Link to="/login">Iniciar sesión</Link>
           <Link to="/registro">Crear cuenta</Link>
-          <Link to="/recuperar">Olvidé mi contraseña</Link>
         </div>
-        <small>
-          Sin correo SMTP configurado, el enlace se guarda en el equipo del
-          servidor. Pedile acceso al responsable de la demostración.
-        </small>
       </div>
     </main>
   );

@@ -216,22 +216,6 @@ CREATE TABLE `objetivos` (
 SET character_set_client = @saved_cs_client;
 SET @saved_cs_client     = @@character_set_client;
 SET character_set_client = utf8mb4;
-CREATE TABLE `recuperaciones` (
-  `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `dvh` varchar(64) NOT NULL DEFAULT '',
-  `usuario_id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
-  `token_hash` varchar(64) NOT NULL,
-  `fecha_creacion` datetime(3) NOT NULL,
-  `fecha_expiracion` datetime(3) NOT NULL,
-  `usado` tinyint(1) NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `token_hash` (`token_hash`),
-  KEY `usuario_id` (`usuario_id`),
-  CONSTRAINT `recuperaciones_ibfk_1` FOREIGN KEY (`usuario_id`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-SET character_set_client = @saved_cs_client;
-SET @saved_cs_client     = @@character_set_client;
-SET character_set_client = utf8mb4;
 CREATE TABLE `roles` (
   `id` char(36) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
   `dvh` varchar(64) NOT NULL DEFAULT '',

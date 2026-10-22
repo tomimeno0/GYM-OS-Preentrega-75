@@ -1,6 +1,6 @@
 # Joaquín Casanou · Rutinas manuales y catálogo de ejercicios
 
-Esta es tu responsabilidad de estudio y revisión. No declara quién escribió el código.
+Responsabilidad de estudio y revisión de la edición 75; no es una declaración de autoría.
 
 ## Mapa mental
 
@@ -21,7 +21,7 @@ flowchart TD
 
 ## Archivos y funciones
 
-Pantalla: [client/src/pages/Rutinas.jsx](../client/src/pages/Rutinas.jsx). Backend: [controllers/rutinas.controller.js](../controllers/rutinas.controller.js). Rutas de cuentas en [usuarios.routes.js](../routes/usuarios.routes.js); las demás en [gimnasio.routes.js](../routes/gimnasio.routes.js).
+Pantalla: [Rutinas.jsx](../client/src/pages/Rutinas.jsx). Backend: [controllers/rutinas.controller.js](../controllers/rutinas.controller.js). Las rutas están en [usuarios.routes.js](../routes/usuarios.routes.js) y [gimnasio.routes.js](../routes/gimnasio.routes.js).
 
 | Función | Qué hace y qué tenés que poder explicar |
 | --- | --- |
@@ -35,20 +35,20 @@ Pantalla: [client/src/pages/Rutinas.jsx](../client/src/pages/Rutinas.jsx). Backe
 | [actualizarRutinaEjercicio](../controllers/rutinas.controller.js#L84) | Reemplaza los ejercicios dentro de la misma transacción. |
 | [eliminarRutina](../controllers/rutinas.controller.js#L185) | Da de baja una rutina salvo que tenga un entrenamiento abierto. |
 
-## Librerías que intervienen
+## Librerías
 
 React y Axios; Sequelize para Rutina/RutinaEjercicio/Objetivo; catálogo JSON de exercises-dataset con licencia conservada. No requiere imágenes ni llamadas externas para buscar ejercicios.
 
-## Qué tenés que entender
+## Qué entender
 
 Día lunes=1 a domingo=7; orden distinto dentro del mismo día; peso cero es peso corporal. El catálogo fija nombre y grupo desde el servidor. Una edición no borra entrenamientos, porque éstos ya copiaron los datos. No se puede dar de baja un plan mientras se está entrenando.
 
-En la pantalla ubicá los estados (useState), la carga inicial (useEffect), el submit y las llamadas Axios. Seguí la ruta hasta la función del controlador y el modelo. Entendé qué datos entran, qué se valida, qué consulta se ejecuta y qué respuesta se devuelve. No hace falta memorizar cada palabra, pero sí poder explicar una función y una condición de error.
+Ubicá useState, useEffect cuando se use, los eventos del formulario y las llamadas Axios. Para cada función explicá entradas, validación, consulta y respuesta; no hace falta memorizar palabra por palabra.
 
-## Recorrido para defenderlo
+## Recorrido de defensa
 
 Buscá squat, leé las instrucciones, agregá una ficha al editor y quitá el ejercicio vacío inicial si corresponde. Guardá, editá series y volvé a guardar. Mostrá una rutina manual y diferenciála de una propuesta IA.
 
-## Base común mínima
+## Base común
 
-Todos deben poder explicar `pantalla → ruta → controlador → modelo → MySQL`, request/response, async/await y try/catch. Las relaciones están en [models/index.js](../models/index.js). La confirmación visible está en [Confirmar.jsx](../client/src/components/Confirmar.jsx): muestra aceptar/cancelar; el servidor vuelve a exigir confirmación. Consultá [el alcance](../docs/ALCANCE.md) antes de prometer funciones del sistema completo.
+Pantalla → ruta → controlador → modelo → MySQL. Las relaciones están en [models/index.js](../models/index.js). La confirmación está en [Confirmar.jsx](../client/src/components/Confirmar.jsx). Consultá el [alcance](../docs/ALCANCE.md). Vite solo inicia o compila React; no es una función del gimnasio ni hay que estudiar sus mecanismos internos.

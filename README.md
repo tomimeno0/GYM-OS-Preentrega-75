@@ -2,7 +2,7 @@
 
 Proyecto educativo en JavaScript con React, Express, Sequelize y MySQL. Esta copia reorganiza la aplicación según los ejemplos de `REPASO COMPLETO.rar`: rutas → controladores → modelos, con consultas directas y funciones visibles.
 
-No reemplaza el proyecto completo ni la preentrega anterior. El nombre identifica el corte de entrega: incluye 29 de los 39 casos nominales (74,36 %), no un 75 % medido por dificultad, tiempo ni autoría. Ver [alcance y límites](docs/ALCANCE.md).
+No reemplaza el proyecto completo ni la preentrega anterior. El nombre identifica el corte de entrega: incluye 28 de los 39 casos nominales (71,79 %), no un 75 % medido por dificultad, tiempo ni autoría. Ver [alcance y límites](docs/ALCANCE.md).
 
 ## Cómo está organizado
 
@@ -19,7 +19,7 @@ models/exercises/        catálogo textual de ejercicios y licencia
 sql/estructura.sql       esquema MySQL, sin usuarios ni datos personales
 ```
 
-Cada pantalla usa `useState`, `useEffect`, formularios y Axios. No hay carpeta de servicios, clases de despacho, validadores genéricos ni reintentos automáticos de IA. Las contraseñas siguen protegidas; simplificar no significa publicar credenciales ni permitir consultar cuentas ajenas. [Criterio del profesor](docs/CRITERIO-DEL-PROFESOR.md).
+Cada pantalla usa `useState`, `useEffect`, formularios y Axios. No hay carpeta de servicios, clases de despacho, validadores genéricos ni reintentos automáticos de IA. Se retiraron los temas 45, 46 y 47. Las contraseñas siguen protegidas; simplificar no significa publicar credenciales ni permitir consultar cuentas ajenas. [Criterio del profesor](docs/CRITERIO-DEL-PROFESOR.md).
 
 ## Ejecutar
 
@@ -36,11 +36,9 @@ Para editar React con recarga: mantener el servidor y ejecutar `npm run dev --pr
 
 Para usar una instalación propia de MySQL, crear una base vacía y un usuario con permisos solamente sobre esa base; configurar `DB_*` y ejecutar el paso de inicialización. `sql/estructura.sql` permite inspeccionar el esquema; no hace falta importarlo además de inicializar.
 
-## IA y recuperación
+## IA
 
-Cohere se llama desde el backend con `COHERE_API_KEY`, nunca desde React. Modelo configurable en `.env`. Primero autorizar el envío en Mi cuenta. El chat conserva conversaciones; generar/adaptar rutinas es una acción separada, con confirmación. Un error del proveedor se informa y no se reemplaza por una respuesta simulada. Cada llamada tiene un máximo de 45 segundos y no se reintenta automáticamente. Las propuestas deben revisarse antes de entrenar. Referencia: [Chat API v2 de Cohere](https://docs.cohere.com/v2/reference/chat).
-
-Sin SMTP configurado, la recuperación guarda el enlace en `.local/correos/` del servidor, con permisos privados. No envía un correo real ni muestra el token al navegador. Con SMTP configurado usa Nodemailer. Esta entrega local no es un servicio de correo ni un despliegue de producción.
+Cohere se llama desde el backend, con clave privada en .env y consentimiento en Mi cuenta. No hay modelo local ni respuesta simulada. Una llamada puede fallar y se informa sin reintentar automáticamente. [Referencia de la API](https://docs.cohere.com/v2/reference/chat).
 
 ## Estudiar y revisar
 

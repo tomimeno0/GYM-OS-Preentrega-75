@@ -1,10 +1,10 @@
-# Equipo · nueve funcionalidades
+# Equipo · nueve responsabilidades de estudio
 
-Responsabilidades de estudio y revisión, no registro de autoría. Cada guía contiene su propio diagrama; no hay otro repositorio de apuntes.
+Cada guía contiene su diagrama en el mismo MD. El reparto es para estudiar y revisar; no certifica autoría ni porcentajes de programación.
 
 | Integrante | Funcionalidad |
 | --- | --- |
-| [Gianluca Pizarro](01-gianluca-pizarro.md) | Registro, acceso y recuperación |
+| [Gianluca Pizarro](01-gianluca-pizarro.md) | Registro e inicio/cierre de sesión |
 | [Tomás Menossi](02-tomas-menossi.md) | Asistente IA y rutinas con Cohere |
 | [Iván Lerner](03-ivan-lerner.md) | Entrenamientos e historial |
 | [Paulo López](04-paulo-lopez.md) | Objetivos |

@@ -1,6 +1,6 @@
-# Gianluca Pizarro · Registro, acceso y recuperación
+# Gianluca Pizarro · Registro e inicio/cierre de sesión
 
-Esta es tu responsabilidad de estudio y revisión. No declara quién escribió el código.
+Responsabilidad de estudio y revisión de la edición 75; no es una declaración de autoría.
 
 ## Mapa mental
 
@@ -19,32 +19,30 @@ flowchart TD
 
 ## Archivos y funciones
 
-Pantalla: [client/src/pages/Acceso.jsx](../client/src/pages/Acceso.jsx). Backend: [controllers/usuarios.controller.js](../controllers/usuarios.controller.js). Rutas de cuentas en [usuarios.routes.js](../routes/usuarios.routes.js); las demás en [gimnasio.routes.js](../routes/gimnasio.routes.js).
+Pantalla: [Acceso.jsx](../client/src/pages/Acceso.jsx). Backend: [controllers/usuarios.controller.js](../controllers/usuarios.controller.js). Las rutas están en [usuarios.routes.js](../routes/usuarios.routes.js) y [gimnasio.routes.js](../routes/gimnasio.routes.js).
 
 | Función | Qué hace y qué tenés que poder explicar |
 | --- | --- |
-| [registrarUsuario](../controllers/usuarios.controller.js#L53) | Valida datos, rechaza correos repetidos, calcula el hash, crea usuario/rol/sesión y devuelve campos públicos. |
-| [iniciarSesion](../controllers/usuarios.controller.js#L127) | Busca por correo, compara la contraseña y crea una sesión de ocho horas. |
-| [abrirSesion](../controllers/usuarios.controller.js#L30) | Firma un JWT, guarda solo su hash y envía una cookie HTTP-only. |
-| [cerrarSesion](../controllers/usuarios.controller.js#L154) | Exige confirmación, elimina la sesión actual y limpia la cookie. |
-| [recuperarPassword](../controllers/usuarios.controller.js#L258) | Genera un token aleatorio de media hora y envía o guarda el enlace sin revelar si la cuenta existe. |
-| [restablecerPassword](../controllers/usuarios.controller.js#L286) | Consume una sola vez el token, actualiza el hash y revoca las sesiones anteriores. |
-| [verificarSesion](../controllers/auth.controller.js#L6) | Verifica firma y vencimiento, sesión persistida y cuenta activa antes de permitir el siguiente controlador. |
+| [registrarUsuario](../controllers/usuarios.controller.js#L51) | Valida datos, rechaza correos repetidos, calcula el hash, crea usuario/rol/sesión y devuelve campos públicos. |
+| [iniciarSesion](../controllers/usuarios.controller.js#L123) | Busca por correo, compara la contraseña y crea una sesión de ocho horas. |
+| [abrirSesion](../controllers/usuarios.controller.js#L28) | Firma un JWT, guarda solo su hash y envía una cookie HTTP-only. |
+| [cerrarSesion](../controllers/usuarios.controller.js#L150) | Exige confirmación, elimina la sesión actual y limpia la cookie. |
+| [verificarSesion](../controllers/auth.controller.js#L6) | Verifica firma, vencimiento, sesión persistida y cuenta activa antes de llamar al controlador. |
 
-## Librerías que intervienen
+## Librerías
 
-React y Axios envían formularios; bcrypt calcula/compara hashes; jsonwebtoken firma/verifica sesiones; cookie-parser lee la cookie; Nodemailer envía el enlace cuando hay SMTP. Sequelize consulta usuarios, roles, sesiones y recuperaciones.
+React y Axios envían formularios; bcrypt calcula y compara hashes; jsonwebtoken firma y verifica sesiones; cookie-parser lee la cookie; Sequelize guarda usuarios, roles y sesiones.
 
-## Qué tenés que entender
+## Qué entender
 
-Cuándo usar registro o login; diferencia entre contraseña, hash, JWT y token de recuperación; por qué la cookie no es legible desde JavaScript; por qué una recuperación invalida las sesiones; qué ocurre cuando no hay SMTP.
+Diferencia entre registro y login, contraseña y hash, JWT y cookie. El servidor comprueba la sesión y cada usuario solo accede a sus datos. No se estudia envío de correos ni cambio de contraseña por enlace.
 
-En la pantalla ubicá los estados (useState), la carga inicial (useEffect), el submit y las llamadas Axios. Seguí la ruta hasta la función del controlador y el modelo. Entendé qué datos entran, qué se valida, qué consulta se ejecuta y qué respuesta se devuelve. No hace falta memorizar cada palabra, pero sí poder explicar una función y una condición de error.
+Ubicá useState, useEffect cuando se use, los eventos del formulario y las llamadas Axios. Para cada función explicá entradas, validación, consulta y respuesta; no hace falta memorizar palabra por palabra.
 
-## Recorrido para defenderlo
+## Recorrido de defensa
 
-Abrí una cuenta sintética, cerrá sesión e ingresá otra vez. Pedí recuperación: explicá dónde está el enlace si no hay SMTP. No muestres tokens ni contraseñas en la exposición.
+Registrá una cuenta sintética, cerrá sesión, volvé a ingresar y probá una contraseña incorrecta. Explicá qué se guarda en la base y qué vuelve al navegador.
 
-## Base común mínima
+## Base común
 
-Todos deben poder explicar `pantalla → ruta → controlador → modelo → MySQL`, request/response, async/await y try/catch. Las relaciones están en [models/index.js](../models/index.js). La confirmación visible está en [Confirmar.jsx](../client/src/components/Confirmar.jsx): muestra aceptar/cancelar; el servidor vuelve a exigir confirmación. Consultá [el alcance](../docs/ALCANCE.md) antes de prometer funciones del sistema completo.
+Pantalla → ruta → controlador → modelo → MySQL. Las relaciones están en [models/index.js](../models/index.js). La confirmación está en [Confirmar.jsx](../client/src/components/Confirmar.jsx). Consultá el [alcance](../docs/ALCANCE.md). Vite solo inicia o compila React; no es una función del gimnasio ni hay que estudiar sus mecanismos internos.

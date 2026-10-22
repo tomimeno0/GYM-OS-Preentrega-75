@@ -1,5 +1,4 @@
 const express = require("express");
-const { rateLimit } = require("express-rate-limit");
 const { verificarSesion } = require("../controllers/auth.controller");
 const mediciones = require("../controllers/mediciones.controller");
 const objetivos = require("../controllers/objetivos.controller");
@@ -9,13 +8,6 @@ const nutricion = require("../controllers/nutricion.controller");
 const progreso = require("../controllers/progreso.controller");
 const ia = require("../controllers/ia.controller");
 const router = express.Router();
-const limitarIA = rateLimit({
-  windowMs: 60000,
-  limit: 8,
-  standardHeaders: "draft-8",
-  legacyHeaders: false,
-  message: { message: "Esperá un minuto antes de hacer más consultas." },
-});
 router.use(verificarSesion);
 router.get("/mediciones", mediciones.listarMediciones);
 router.post("/mediciones/initial", mediciones.actualizarMedicion);
@@ -42,9 +34,9 @@ router.put("/consumos/:id", nutricion.registrarComida);
 router.delete("/consumos/:id", nutricion.eliminarConsumo);
 router.get("/progreso", progreso.verProgreso);
 router.get("/ia/estado", ia.estadoIA);
-router.post("/ia/consulta", limitarIA, ia.responderConsulta);
-router.post("/ia/rutinas", limitarIA, ia.generarRutinaIA);
-router.post("/ia/rutinas/:id/adaptar", limitarIA, ia.modificarRutinaIA);
+router.post("/ia/consulta", ia.responderConsulta);
+router.post("/ia/rutinas", ia.generarRutinaIA);
+router.post("/ia/rutinas/:id/adaptar", ia.modificarRutinaIA);
 router.get("/ia/conversaciones", ia.listarConversaciones);
 router.get("/ia/conversaciones/:id", ia.verConversacion);
 module.exports = router;

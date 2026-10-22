@@ -1,21 +1,13 @@
-# Preentrega del 75 %
+# Edición 75 · alcance actual
 
-El corte incluye 29 de los 39 casos nominales del proyecto: 74,36 %. Es la aproximación más cercana al 75 % usando el número de casos; no un porcentaje de esfuerzo ni de caracteres. El proyecto completo y la preentrega del 50 % permanecen separados y sin modificaciones.
+El nombre de la entrega se conserva. Tras el recorte solicitado hay **28/39 casos nominales (71,79 %)**; no es un porcentaje de esfuerzo ni certificación de todos los diagramas.
 
-Incluye CU001–CU022, CU024, CU025 y CU027–CU031: registro, ingreso, salida, recuperación, perfil y borrado propios; mediciones e historial; objetivos y progreso; rutinas manuales y con IA, adaptación de rutinas; sesiones deportivas; dietas manuales; registro alimentario y macros; chat con IA.
+Incluye cuentas, perfil, mediciones, objetivos, progreso, rutinas manuales, catálogo, entrenamientos y chat con Cohere, rutinas generadas/adaptadas con IA, dietas manuales y consumos/macros. La selección exacta está en [alcance.json](../alcance.json).
 
-No incluye CU023 ni CU026 (generar/adaptar dietas con IA), ni CU032–CU039 (administración de terceros y roles). No se muestran botones ni se habilitan rutas para esos casos.
+Se retiraron CU004, su interfaz, rutas, controlador, modelo y dependencias. También se quitaron los limitadores de intentos y la comprobación de origen/cabecera de escritura. No se reemplazaron por mecanismos equivalentes ocultos. El registro, login, hash de contraseñas, cookie de sesión y filtros de propiedad siguen funcionando. No se considera una configuración adecuada para exponer públicamente un servicio de producción.
 
-Las credenciales y los datos de las entregas anteriores no se migran ni se alteran. Esta copia usa una base independiente, otro puerto y otra cookie. El repositorio contiene código y documentación; no guarda claves ni la base local.
+La arquitectura es la del curso: CommonJS, rutas, controladores y modelos explícitos. No hay servicios, clases delegadoras, validadores genéricos, HMAC de tablas, mutex ni reintentos automáticos de IA. Se mantienen try/catch, validaciones de datos y transacciones concretas de cabecera/detalle.
 
-## Qué se simplificó y qué no se afirma
+Las columnas dvh del DER quedan reservadas; no se implementan DVH/DVV. Los nombres UML del corte se usan como funciones, no como una jerarquía de clases. El pedido actual excluye expresamente la operación retirada, aunque aparezca en el documento original.
 
-Las operaciones del corte son funciones de controladores; no se reproduce la jerarquía de clases del UML mediante wrappers. Se mantienen sus nombres (incluidas las grafías `definirObjeto`, `visuaizarObjetivo`, `encriptarRreversible` y las dos variantes de consulta IA). Es una adaptación funcional a la estructura del profesor, no equivalencia estructural de clases.
-
-Las columnas `dvh` del DER están reservadas y quedan vacías. No se implementa el sistema anterior de DVH/DVV, ni se afirma que `digitoVerificador`/`digitoVerificado` estén funcionando. Ese sistema y los métodos administrativos y de dietas IA quedan fuera de esta copia simplificada. Se prioriza el pedido posterior de quitar la complejidad no presente en el repaso. La bitácora básica de cuentas, medidas y objetivos no constituye una auditoría completa del sistema.
-
-Los macros se calculan a partir de la etiqueta ingresada manualmente; no hay un catálogo externo de alimentos ni verificación nutricional de esos valores. Los planes y consumos se muestran por separado. Los gráficos representan registros reales, no pronósticos.
-
-Se usa una transacción concreta al guardar varias filas relacionadas y un límite de espera en IA; no hay colas, circuit breakers, fallback a modelos locales ni tolerancia automática a fallos. Los errores de conexión se muestran para que la persona decida volver a intentar.
-
-El despliegue es local. No se incluyen administración, planes de dieta con IA, certificaciones, correo SMTP entregado de extremo a extremo ni pruebas de carga de producción. El conteo de 29 casos describe funciones alcanzadas, no garantiza cada condición secundaria de todos los diagramas originales.
+No hay administración ni generación/adaptación de dietas IA. Los nutrientes de alimentos se ingresan manualmente; no existe un proveedor externo de alimentos. El proyecto completo original no se modifica.

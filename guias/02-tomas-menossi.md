@@ -1,6 +1,6 @@
 # Tomás Menossi · Asistente IA y rutinas con Cohere
 
-Esta es tu responsabilidad de estudio y revisión. No declara quién escribió el código.
+Responsabilidad de estudio y revisión de la edición 75; no es una declaración de autoría.
 
 ## Mapa mental
 
@@ -21,7 +21,7 @@ flowchart TD
 
 ## Archivos y funciones
 
-Pantalla: [client/src/pages/Asistente.jsx](../client/src/pages/Asistente.jsx). Backend: [controllers/ia.controller.js](../controllers/ia.controller.js). Rutas de cuentas en [usuarios.routes.js](../routes/usuarios.routes.js); las demás en [gimnasio.routes.js](../routes/gimnasio.routes.js).
+Pantalla: [Asistente.jsx](../client/src/pages/Asistente.jsx). Backend: [controllers/ia.controller.js](../controllers/ia.controller.js). Las rutas están en [usuarios.routes.js](../routes/usuarios.routes.js) y [gimnasio.routes.js](../routes/gimnasio.routes.js).
 
 | Función | Qué hace y qué tenés que poder explicar |
 | --- | --- |
@@ -35,20 +35,20 @@ Pantalla: [client/src/pages/Asistente.jsx](../client/src/pages/Asistente.jsx). B
 | [listarConversaciones](../controllers/ia.controller.js#L299) | Lista únicamente las conversaciones del usuario conectado. |
 | [verConversacion](../controllers/ia.controller.js#L313) | Comprueba el dueño antes de devolver sus mensajes. |
 
-## Librerías que intervienen
+## Librerías
 
 React maneja consulta, modo, conversación y estado de espera. Axios llama al backend. fetch hace la llamada externa; AbortSignal corta la espera; Sequelize conserva planes y mensajes. La clave solo vive en .env del servidor.
 
-## Qué tenés que entender
+## Qué entender
 
 La IA sí es externa y real, pero no ejecuta acciones desde el chat. Diferenciá chat, generar y adaptar. Entendé system/user/assistant, JSON, historial de diez mensajes, consentimiento, API key, timeout, error 503 y validación antes de guardar. No hay modelo Llama local ni respuestas simuladas de respaldo.
 
-En la pantalla ubicá los estados (useState), la carga inicial (useEffect), el submit y las llamadas Axios. Seguí la ruta hasta la función del controlador y el modelo. Entendé qué datos entran, qué se valida, qué consulta se ejecuta y qué respuesta se devuelve. No hace falta memorizar cada palabra, pero sí poder explicar una función y una condición de error.
+Ubicá useState, useEffect cuando se use, los eventos del formulario y las llamadas Axios. Para cada función explicá entradas, validación, consulta y respuesta; no hace falta memorizar palabra por palabra.
 
-## Recorrido para defenderlo
+## Recorrido de defensa
 
 En Mi cuenta activá consentimiento. En Asistente elegí Soporte, preguntá cómo registrar un entrenamiento y hacé un seguimiento. Para una rutina primero cargá medidas y objetivo; generá, revisá en Rutinas y adaptá con nuevas preferencias. Explicá el error visible si falta clave o conexión.
 
-## Base común mínima
+## Base común
 
-Todos deben poder explicar `pantalla → ruta → controlador → modelo → MySQL`, request/response, async/await y try/catch. Las relaciones están en [models/index.js](../models/index.js). La confirmación visible está en [Confirmar.jsx](../client/src/components/Confirmar.jsx): muestra aceptar/cancelar; el servidor vuelve a exigir confirmación. Consultá [el alcance](../docs/ALCANCE.md) antes de prometer funciones del sistema completo.
+Pantalla → ruta → controlador → modelo → MySQL. Las relaciones están en [models/index.js](../models/index.js). La confirmación está en [Confirmar.jsx](../client/src/components/Confirmar.jsx). Consultá el [alcance](../docs/ALCANCE.md). Vite solo inicia o compila React; no es una función del gimnasio ni hay que estudiar sus mecanismos internos.

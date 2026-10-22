@@ -8,7 +8,7 @@ Esta versión mantiene ese recorrido: pantalla React → ruta Express → funci�
 
 Los nombres de operaciones de UML que pertenecen al corte se usan como funciones reales de controladores; una tabla en la documentación enlaza cada una con su ruta. No se conservan clases vacías que simulan cumplir el UML. Los casos excluidos se declaran como tales.
 
-Se conserva try/catch, tal como el profesor. Se mantienen hash de contraseñas, clave privada fuera de React, validación básica, consultas restringidas al propietario, consentimiento IA y confirmaciones. Un guardado de cabecera/detalle usa una transacción visible en la función, sin coordinador genérico, para que no quede media rutina o media dieta. Una consulta a Cohere tiene un límite de espera, pero no una cadena automática de reintentos.
+Se conserva try/catch, tal como el profesor. Se retiraron los temas 45, 46 y 47 por pedido posterior. Se mantienen hash de contraseñas, clave privada fuera de React, validación básica, consultas restringidas al propietario, consentimiento IA y confirmaciones. Un guardado de cabecera/detalle usa una transacción visible en la función, sin coordinador genérico, para que no quede media rutina o media dieta. Una consulta a Cohere tiene un límite de espera, pero no una cadena automática de reintentos.
 
 No se copia sync({force:true}) del ejercicio: borraría los datos al iniciar. La inicialización usa sync() sin force ni alter y solo crea tablas inexistentes en una base nueva e independiente. No se copian contraseñas del ejemplo, fallos de filtros de Sequelize ni respuestas que exponen errores internos.
 

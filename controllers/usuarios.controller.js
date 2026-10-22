@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
-const { Op } = require("sequelize");
 const { sequelize } = require("../config/db");
-const { Usuario, Rol, UsuarioRol, Sesion, Recuperacion } = require("../models");
+const { Usuario, Rol, UsuarioRol, Sesion } = require("../models");
 const {
   encriptarIrreversible,
   compararPassword,
@@ -10,7 +9,6 @@ const {
   encriptarRreversible,
   desencriptar,
 } = require("./seguridad.controller");
-const { enviarRecuperacion } = require("./correo.controller");
 const { registrarEvento } = require("./bitacora.controller");
 
 function datosPublicos(usuario) {
@@ -69,12 +67,10 @@ async function registrarUsuario(req, res) {
       password.length < 10 ||
       Buffer.byteLength(password) > 72
     )
-      return res
-        .status(400)
-        .json({
-          message:
-            "Ingresá un correo válido y una contraseña de 10 a 72 caracteres.",
-        });
+      return res.status(400).json({
+        message:
+          "Ingresá un correo válido y una contraseña de 10 a 72 caracteres.",
+      });
     const correo = email.trim().toLowerCase();
     if (await Usuario.findOne({ where: { email: correo } }))
       return res
@@ -255,98 +251,6 @@ async function eliminarCuenta(req, res) {
   }
 }
 
-async function recuperarPassword(req, res) {
-  try {
-    if (typeof req.body.email !== "string" || req.body.email.length > 150)
-      return res.status(400).json({ message: "Ingresá un correo válido." });
-    const usuario = await Usuario.findOne({
-      where: { email: req.body.email.trim().toLowerCase(), estado: "activo" },
-    });
-    if (usuario) {
-      const token = tokenNuevo();
-      await Recuperacion.destroy({ where: { usuario_id: usuario.id } });
-      await Recuperacion.create({
-        usuario_id: usuario.id,
-        token_hash: hashToken(token),
-        fecha_creacion: new Date(),
-        fecha_expiracion: new Date(Date.now() + 30 * 60000),
-      });
-      await enviarRecuperacion(usuario.email, token);
-    }
-    res.json({
-      message: "Si la cuenta existe, se generó un enlace de recuperación.",
-    });
-  } catch (error) {
-    res
-      .status(503)
-      .json({ message: "No se pudo generar el enlace. Probá más tarde." });
-  }
-}
-
-async function restablecerPassword(req, res) {
-  try {
-    const { token, password } = req.body;
-    if (
-      typeof token !== "string" ||
-      token.length !== 64 ||
-      typeof password !== "string" ||
-      password.length < 10 ||
-      Buffer.byteLength(password) > 72
-    )
-      return res
-        .status(400)
-        .json({ message: "Revisá el enlace y la contraseña nueva." });
-    const recuperacion = await Recuperacion.findOne({
-      where: {
-        token_hash: hashToken(token),
-        usado: false,
-        fecha_expiracion: { [Op.gt]: new Date() },
-      },
-    });
-    if (!recuperacion)
-      return res
-        .status(400)
-        .json({ message: "El enlace ya fue usado o venció." });
-    const password_hash = await encriptarIrreversible(password);
-    await sequelize.transaction(async (transaction) => {
-      const [cantidad] = await Recuperacion.update(
-        { usado: true },
-        {
-          where: {
-            id: recuperacion.id,
-            usado: false,
-            fecha_expiracion: { [Op.gt]: new Date() },
-          },
-          transaction,
-        },
-      );
-      if (cantidad !== 1) throw new Error("Enlace usado");
-      await Usuario.update(
-        { password_hash },
-        {
-          where: { id: recuperacion.usuario_id, estado: "activo" },
-          transaction,
-        },
-      );
-      await Sesion.destroy({
-        where: { usuario_id: recuperacion.usuario_id },
-        transaction,
-      });
-      await registrarEvento(
-        recuperacion.usuario_id,
-        "CU004_RECUPERAR",
-        "cuentas",
-        transaction,
-      );
-    });
-    res.json({ message: "Contraseña actualizada. Volvé a ingresar." });
-  } catch (error) {
-    res
-      .status(400)
-      .json({ message: "No se pudo usar el enlace. Pedí uno nuevo." });
-  }
-}
-
 module.exports = {
   registrarUsuario,
   iniciarSesion,
@@ -354,7 +258,5 @@ module.exports = {
   verCuenta,
   actualizarDatos,
   eliminarCuenta,
-  recuperarPassword,
-  restablecerPassword,
   datosPublicos,
 };

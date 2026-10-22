@@ -14,10 +14,8 @@
     "cookie-parser": "1.4.7",
     "dotenv": "17.4.2",
     "express": "5.2.1",
-    "express-rate-limit": "8.7.0",
     "jsonwebtoken": "9.0.2",
     "mysql2": "3.24.2",
-    "nodemailer": "10.1.6",
     "sequelize": "6.37.8"
   },
   "overrides": {
