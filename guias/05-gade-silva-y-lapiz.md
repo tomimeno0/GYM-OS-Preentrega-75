@@ -1,40 +1,45 @@
-# Gade Silva y Lápiz · endpoints de mediciones y resumen del progreso
+# Gade Silva y Lápiz · próximo avance
 
-Edición **75**. Tu responsabilidad principal son los **4 endpoints de la tabla siguiente**. Las funciones auxiliares y las consultas a rutas de otros compañeros se distinguen más abajo. Esto es un reparto para estudiar y defender, no una declaración de quién escribió el código.
+**Tarea nueva:** Registro de consumos y agregado de alimentos.
 
-## Tus endpoints concretos
+**Estado: pendiente de trabajo y verificación individual.** No es una declaración de que ya lo programaste. Se conserva tu responsabilidad de base del 50 % y se añade un recorrido concreto del incremento.
 
-| Método y ruta completa | Ruta en el código | Handler real | Acceso |
-| --- | --- | --- | --- |
-| `GET /api/mediciones` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L12) | [listarMediciones](../controllers/mediciones.controller.js#L204) | Sesión requerida |
-| `POST /api/mediciones/initial` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L13) | [actualizarMedicion](../controllers/mediciones.controller.js#L55) | Sesión requerida |
-| `POST /api/mediciones` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L14) | [actualizarMedicion](../controllers/mediciones.controller.js#L55) | Sesión requerida |
-| `GET /api/progreso` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L35) | [verProgreso](../controllers/progreso.controller.js#L25) | Sesión requerida |
+## Qué tenés que hacer ahora
 
-Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
+Registrar lo realmente comido, manejar fecha/hora y agregar alimentos desde el editor común. Comprobar que cambiar gramos cambia el resultado. Revisar el detalle de comida guardado con Valentín, sin sumar planes como consumo.
 
-## Mapa de tus endpoints
+## Mapa de tu avance
 
 ```mermaid
 flowchart LR
-  P["Pantalla o cliente HTTP"]
-  P --> E0["GET /api/mediciones"]
-  E0 --> F0["listarMediciones"]
-  F0 --> R["Respuesta HTTP"]
-  P --> E1["POST /api/mediciones/initial"]
-  E1 --> F1["actualizarMedicion"]
-  F1 --> R["Respuesta HTTP"]
-  P --> E2["POST /api/mediciones"]
-  E2 --> F2["actualizarMedicion"]
-  F2 --> R["Respuesta HTTP"]
-  P --> E3["GET /api/progreso"]
-  E3 --> F3["verProgreso"]
-  F3 --> R["Respuesta HTTP"]
+  U["Formulario o acción: Registro de consumos y agregado de alimentos"]
+  U --> E0["POST /api/consumos"]
+  E0 --> H0["registrarComida"]
+  H0 --> R["Validación, MySQL o Cohere y respuesta"]
+  R --> C["Mostrar resultado y comprobarlo"]
 ```
 
-En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas y consultas concretas se explican por endpoint; el catálogo usa JSON local y `/ia/estado` lee configuración, no hacen consultas de negocio a MySQL.
+## Tus endpoints y continuidad
 
-## Explicación de cada endpoint
+| Etapa | Método y ruta | Handler real |
+| --- | --- | --- |
+| Base del 50 % | `GET /api/mediciones` | [listarMediciones](../controllers/mediciones.controller.js#L204) |
+| Base del 50 % | `POST /api/mediciones/initial` | [actualizarMedicion](../controllers/mediciones.controller.js#L55) |
+| Base del 50 % | `POST /api/mediciones` | [actualizarMedicion](../controllers/mediciones.controller.js#L55) |
+| Avance nuevo | `POST /api/consumos` | [registrarComida](../controllers/nutricion.controller.js#L340) |
+
+## Funciones concretas del avance
+
+| Función | Qué parte recorrés |
+| --- | --- |
+| [registrarComida](../controllers/nutricion.controller.js#L340) | Tu rama crea un consumo sin id y recalcula nutrientes. |
+| [copiarAlimento](../client/src/pages/Nutricion.jsx#L72) | Copia explícita de los campos de un alimento. |
+| [agregarAlimento](../client/src/pages/Nutricion.jsx#L270) | Agrega un alimento al editor común. |
+| [actualizarComida](../controllers/nutricion.controller.js#L96) | Revisión conjunta con Valentín: la misma comida validada se persiste como detalle de dieta. |
+
+Los helpers son funciones internas, no endpoints adicionales. Si una función sirve a POST y PUT o a generación y adaptación, se revisa entre los dos responsables. No hay que duplicarla ni separarla artificialmente para aparentar más código.
+
+## Entradas, consultas y respuestas de tus rutas
 
 ### `GET /api/mediciones`
 
@@ -84,84 +89,40 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Agregar una medición posterior y mostrar que conserva la inicial.
 
-### `GET /api/progreso`
+### `POST /api/consumos`
 
-**Qué recibe.** Sin body ni id de usuario en la URL.
+**Qué recibe.** Body: `nombre_comida`, `tipo_comida`, `fecha_consumo` como instante ISO y `alimentos` (1–30). Cada alimento incluye nombre, cantidad, unidad g/ml/porcion y sus calorías/proteínas/carbohidratos/grasas por 100 g/ml o una porción.
 
-**Qué ejecuta y consulta.** Consulta `MedicionFisica`, `Objetivo` no eliminado, `Entrenamiento` completo y cuenta `Rutina` activa. En el 75 además cuenta `Dieta` activa. Agrupa/calcula valores en JavaScript.
+**Qué ejecuta y consulta.** `datosComida` llama a `calcularMacros`; crea una fila `ComidaConsumida` con propietario, instante, copia de alimentos y totales.
 
-**Qué valida o decide.** `calcularPorcentaje` compara inicio/actual/meta, limita a 0–100 y trata inicio=meta. Resistencia usa mejor distancia; frecuencia cuenta sesiones completas semanales. Objetivos completados cortan en `fecha_cierre`, incluso el mismo día.
+**Qué valida o decide.** Fecha válida desde el año 2000 y no futura. Se recalculan totales en el servidor; un total enviado aparte por el cliente no reemplaza este cálculo. Cantidades positivas y nutrientes válidos.
 
-**Respuesta correcta.** `200` → `{mediciones, objetivos: [...con valor_actual y porcentaje], entrenamientos_completados, rutinas}`; en 75 agrega `dietas`.
+**Respuesta correcta.** `201` → consumo creado con `calorias_totales`, `proteinas_totales_g`, `carbohidratos_totales_g`, `grasas_totales_g`.
 
-**Errores propios.** `500` si no puede consultar/calcular.
+**Errores propios.** `400` por alimento, cantidad o fecha inválidos; `500` si falla.
 
-**Quién lo llama.** Progreso.jsx: `useEffect` carga el resumen y Recharts dibuja peso; es la pantalla Resumen, no una pestaña de Mi cuenta.
+**Quién lo llama.** Nutricion.jsx modo consumos: `guardar` sin id editando; vacío en fecha/hora del formulario se convierte al instante actual antes de enviar.
 
-**Cómo mostrarlo.** Explicar el cálculo 80→70 con actual 75 =50 %, mostrar el gráfico y por qué una meta completada manualmente puede no medir 100 %.
+**Cómo mostrarlo.** Ingresar 50 g de un alimento de 400 kcal/100 g y comprobar que registra 200 kcal.
 
-## Funciones de apoyo: no son otros endpoints
+## Cuándo está terminado tu bloque
 
-Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asigna una ruta inexistente ni se cambia el responsable por compartir una función.
+- [ ] 50 g a 400 kcal/100 g produce 200 kcal.
+- [ ] Agregar un alimento conserva los valores del anterior.
+- [ ] La fecha futura se rechaza; el día consultado respeta zona horaria.
+- [ ] Explicar el recorrido desde el input hasta la respuesta, sin leer el código palabra por palabra.
+- [ ] Registrar qué revisión, cambio o comprobación hiciste realmente; si hay commit, usar la identidad real.
 
-| Función auxiliar | Para qué interviene |
-| --- | --- |
-| [cambiarPeso](../controllers/mediciones.controller.js#L3) | Valida el rango de peso. |
-| [cambiarAltura](../controllers/mediciones.controller.js#L14) | Valida altura. |
-| [cambiarPorcMusculo](../controllers/mediciones.controller.js#L25) | Valida porcentaje muscular o dato ausente. |
-| [cambiarPorcGraso](../controllers/mediciones.controller.js#L37) | Valida grasa o dato ausente. |
-| [cambiarNivelActividad](../controllers/mediciones.controller.js#L49) | Valida baja/media/alta. |
-| [calcularPorcentaje](../controllers/progreso.controller.js#L9) | Calcula el avance y trata inicio=meta; no recibe HTTP. |
+## Tamaño previsto y trabajo compartido
 
-## Archivos que tenés que ubicar
+Como referencia, este paquete cubre **10.06 %** de las 1.702 líneas nuevas/reemplazadas del incremento medido. Es cobertura asignada para revisar/trabajar, no un porcentaje de programación ya hecho. No mide dificultad ni tiempo y se reajusta si al trabajar aparece una diferencia de carga.
 
-- [controllers/mediciones.controller.js](../controllers/mediciones.controller.js): handlers y lógica de tus endpoints.
-- [controllers/progreso.controller.js](../controllers/progreso.controller.js): handlers y lógica de tus endpoints.
-- [client/src/pages/Medidas.jsx](../client/src/pages/Medidas.jsx): estado, formulario o carga que llama a esas rutas.
-- [client/src/pages/Progreso.jsx](../client/src/pages/Progreso.jsx): estado, formulario o carga que llama a esas rutas.
-- [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+[Plan y límites del cálculo](../docs/PLAN.md). La meta es cerca de 11 % por persona, con margen; el alcance de entrega puede quedar por encima o por debajo del nombre histórico 75. No se inflan líneas ni se atribuye código intacto como una mejora.
 
-## Lo mínimo común para defender estas rutas
+## Lectura del código
 
-Diferenciá `req.params` (id en la URL), `req.query` (filtros después de `?`), `req.body` (JSON enviado) y `req.user` (cuenta autenticada). El usuario propietario se toma de la sesión, no de un id arbitrario enviado por el formulario.
+Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.params trae el id; req.query, filtros; req.body, JSON; req.user, la cuenta autenticada. Las consultas deben restringir el propietario. Axios envía pedidos desde React y el JSON recibido está en respuesta.data. Un 204 no tiene JSON.
 
-Todos los endpoints privados pueden responder `401` si la sesión falta, vence, se cierra o la cuenta no está habilitada; el middleware puede responder `500` si falla su comprobación. No confundas estos errores compartidos con los que devuelve el handler. El parser general también puede rechazar JSON inválido (`400`) o un body demasiado grande (`413`).
+El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
-Para respuestas `204`, no hay JSON que leer. Para crear suele usarse `201`; para leer/editar, `200`. En Axios, el JSON está en `respuesta.data`; en DELETE, el body se pasa como `{data: {...}}`.
-
-No hace falta estudiar todo el sistema ni el funcionamiento interno de Vite. Sí poder seguir tu request desde la pantalla hasta las consultas y explicar una respuesta de éxito y una condición de error.
-
-## Librerías que intervienen
-
-Express y Sequelize guardan el historial físico. React y Axios manejan el formulario; las comprobaciones numéricas y de fechas son JavaScript. Recharts dibuja la serie de peso e Intl aplica la zona horaria en el resumen.
-
-## Coordinación con otros responsables
-
-- Si necesitás datos de otra funcionalidad, consultá el índice general. Un `findAll` interno de tu controlador no equivale a llamar por HTTP a otro endpoint.
-
-Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
-
-## Cómo leer el código simplificado
-
-El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
-
-Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
-
-En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
-
-No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
-
-### Tu recorrido, paso a paso
-
-`actualizarMedicion` toma los datos del body, trata los porcentajes ausentes como `null` con condiciones explícitas y llama a las validaciones de peso, altura y actividad. Un bucle recorre los nombres de los perímetros para aplicar el mismo rango a cada uno. Valida que la fecha sea posterior a la última medición y distingue la carga inicial de las posteriores.
-
-En React, `guardar` construye el body copiando sus campos; recorre los nombres con un `for`, convierte a número lo escrito y deja `null` en campos opcionales vacíos. `mostrarPorcentaje` devuelve un guion solo cuando no hay valor; el cero real no se oculta.
-
-### Tu recorrido, paso a paso
-
-`verProgreso` consulta mediciones, objetivos y entrenamientos propios. Para cada objetivo, recorre los registros y conserva los anteriores a su cierre. Para resistencia busca la mayor distancia con un `for` y una comparación; para frecuencia cuenta entrenamientos de la semana; para peso/grasa toma la última medición válida. Si no hay mediciones usa el valor inicial, sin acceder a un elemento inexistente.
-
-`calcularPorcentaje` calcula `(actual - inicial) / (meta - inicial) * 100`, limita el resultado entre 0 y 100 con `if` y redondea a un decimal. Cuando inicial y meta coinciden hay un caso separado para no dividir por cero. El objetivo cerrado conserva su fecha de corte.
-
-Progreso.jsx carga con una función `async`, prepara `puntosMediciones` con un bucle y se los entrega al gráfico de Recharts. El gráfico dibuja; no decide el porcentaje ni modifica MySQL. `mostrarValorActual` muestra el cero real y solo usa "Sin medición" para un valor ausente.
+[Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).

@@ -1,40 +1,100 @@
-# Valentín Schueld (Sueco) · endpoints de dietas manuales
+# Valentín Schueld (Sueco) · próximo avance
 
-Edición **75**. Tu responsabilidad principal son los **4 endpoints de la tabla siguiente**. Las funciones auxiliares y las consultas a rutas de otros compañeros se distinguen más abajo. Esto es un reparto para estudiar y defender, no una declaración de quién escribió el código.
+**Tarea nueva:** Consulta/baja de dietas y editor de comidas.
 
-## Tus endpoints concretos
+**Estado: pendiente de trabajo y verificación individual.** No es una declaración de que ya lo programaste. Se conserva tu responsabilidad de base del 50 % y se añade un recorrido concreto del incremento.
 
-| Método y ruta completa | Ruta en el código | Handler real | Acceso |
-| --- | --- | --- | --- |
-| `GET /api/dietas` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L27) | [listarDietas](../controllers/nutricion.controller.js#L123) | Sesión requerida |
-| `POST /api/dietas` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L28) | [actualizarDieta](../controllers/nutricion.controller.js#L146) | Sesión requerida |
-| `PUT /api/dietas/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L29) | [actualizarDieta](../controllers/nutricion.controller.js#L146) | Sesión requerida |
-| `DELETE /api/dietas/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L30) | [eliminarDieta](../controllers/nutricion.controller.js#L310) | Sesión requerida |
+## Qué tenés que hacer ahora
 
-Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
+Mostrar planes guardados y dar uno de baja con confirmación. Completar el editor de nombre/tipo/hora de comida y agregar/quitar comidas sin perder datos. Revisar persistencia del detalle con Gade.
 
-## Mapa de tus endpoints
+## Mapa de tu avance
 
 ```mermaid
 flowchart LR
-  P["Pantalla o cliente HTTP"]
-  P --> E0["GET /api/dietas"]
-  E0 --> F0["listarDietas"]
-  F0 --> R["Respuesta HTTP"]
-  P --> E1["POST /api/dietas"]
-  E1 --> F1["actualizarDieta"]
-  F1 --> R["Respuesta HTTP"]
-  P --> E2["PUT /api/dietas/:id"]
-  E2 --> F2["actualizarDieta"]
-  F2 --> R["Respuesta HTTP"]
-  P --> E3["DELETE /api/dietas/:id"]
-  E3 --> F3["eliminarDieta"]
-  F3 --> R["Respuesta HTTP"]
+  U["Formulario o acción: Consulta/baja de dietas y editor de comidas"]
+  U --> E0["GET /api/dietas"]
+  E0 --> H0["listarDietas"]
+  H0 --> R["Validación, MySQL o Cohere y respuesta"]
+  U --> E1["DELETE /api/dietas/:id"]
+  E1 --> H1["eliminarDieta"]
+  H1 --> R["Validación, MySQL o Cohere y respuesta"]
+  R --> C["Mostrar resultado y comprobarlo"]
 ```
 
-En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas y consultas concretas se explican por endpoint; el catálogo usa JSON local y `/ia/estado` lee configuración, no hacen consultas de negocio a MySQL.
+## Tus endpoints y continuidad
 
-## Explicación de cada endpoint
+| Etapa | Método y ruta | Handler real |
+| --- | --- | --- |
+| Base del 50 % | `POST /api/rutinas` | [actualizarRutina](../controllers/rutinas.controller.js#L229) |
+| Base del 50 % | `PUT /api/rutinas/:id` | [actualizarRutina](../controllers/rutinas.controller.js#L229) |
+| Base del 50 % | `DELETE /api/rutinas/:id` | [eliminarRutina](../controllers/rutinas.controller.js#L324) |
+| Avance nuevo | `GET /api/dietas` | [listarDietas](../controllers/nutricion.controller.js#L123) |
+| Avance nuevo | `DELETE /api/dietas/:id` | [eliminarDieta](../controllers/nutricion.controller.js#L310) |
+
+## Funciones concretas del avance
+
+| Función | Qué parte recorrés |
+| --- | --- |
+| [listarDietas](../controllers/nutricion.controller.js#L123) | Consulta propia con detalles. |
+| [eliminarDieta](../controllers/nutricion.controller.js#L310) | Baja lógica confirmada; no suma ni borra consumos. |
+| [copiarComida](../client/src/pages/Nutricion.jsx#L83) | Copia los campos de una comida del editor. |
+| [actualizarComidas](../client/src/pages/Nutricion.jsx#L279) | Actualiza la colección de comidas sin mutar estado. |
+| [agregarComida](../client/src/pages/Nutricion.jsx#L300) | Agrega una comida nueva al plan. |
+| [quitarComida](../client/src/pages/Nutricion.jsx#L291) | Quita una comida elegida del editor. |
+| [actualizarComida](../controllers/nutricion.controller.js#L96) | Detalle de dieta; revisión conjunta con Gade, que maneja alimentos compartidos. |
+
+Los helpers son funciones internas, no endpoints adicionales. Si una función sirve a POST y PUT o a generación y adaptación, se revisa entre los dos responsables. No hay que duplicarla ni separarla artificialmente para aparentar más código.
+
+## Entradas, consultas y respuestas de tus rutas
+
+### `POST /api/rutinas`
+
+**Qué recibe.** Body: `nombre`, `ejercicios` (1–80); opcionales `descripcion`, `objetivo_id`. Cada ejercicio: `nombre_ejercicio` o `ejercicio_id` del catálogo, `dia_semana` (1–7), `series`, `repeticiones`, `peso_sugerido_kg`, `descanso_segundos`; opcionales `orden` y `observaciones`.
+
+**Qué ejecuta y consulta.** Consulta `Objetivo` si se vinculó. `guardarRutina` crea `Rutina` y `actualizarRutinaEjercicio` inserta las filas `RutinaEjercicio`, todo en una transacción.
+
+**Qué valida o decide.** Nombre 2–100; series 1–20; repeticiones 1–200; carga 0–600; descanso entero 0–900; posición no repetida por día. Si hay id del catálogo, el servidor toma su nombre/grupo. Un objetivo nuevo debe ser propio y activo.
+
+**Respuesta correcta.** `201` → cabecera de la rutina; para ver ejercicios completos se vuelve a consultar `GET /api/rutinas`.
+
+**Errores propios.** `400` por cabecera, ejercicio u objetivo inválido; `500` si falla el guardado.
+
+**Quién lo llama.** Rutinas.jsx: `guardar` sin `editando`; calcula `orden` al recorrer la lista.
+
+**Cómo mostrarlo.** Crear una rutina con un ejercicio manual y otro del catálogo; explicar cómo se guarda cabecera y detalle.
+
+### `PUT /api/rutinas/:id`
+
+**Qué recibe.** URL `id` + el mismo body completo que POST /api/rutinas. No es una edición parcial.
+
+**Qué ejecuta y consulta.** Busca `Rutina` propia activa y objetivo si corresponde. En una transacción actualiza cabecera, elimina sus antiguos `RutinaEjercicio` e inserta el nuevo conjunto.
+
+**Qué valida o decide.** Nombre 2–100; series 1–20; repeticiones 1–200; carga 0–600; descanso entero 0–900; posición no repetida por día. Si hay id del catálogo, el servidor toma su nombre/grupo. Un objetivo nuevo debe ser propio y activo. Puede conservar el mismo objetivo histórico ya asociado aunque esté completado. Los ejercicios de entrenamientos iniciados antes son copias independientes.
+
+**Respuesta correcta.** `200` → cabecera actualizada; la pantalla recarga el listado.
+
+**Errores propios.** `400` por datos/objetivo inválidos; `404` si no hay rutina propia activa; `500` por fallo.
+
+**Quién lo llama.** Rutinas.jsx: `editar` llena el formulario y `guardar` usa PUT cuando hay id editando.
+
+**Cómo mostrarlo.** Cambiar series, guardar y comprobar que un entrenamiento anterior mantiene lo que tenía registrado.
+
+### `DELETE /api/rutinas/:id`
+
+**Qué recibe.** URL `id`; body `confirmar: true`.
+
+**Qué ejecuta y consulta.** Busca `Rutina` propia activa; busca un `Entrenamiento` iniciado de ese plan. Si no hay, actualiza estado a eliminada y fecha de actualización.
+
+**Qué valida o decide.** Baja lógica: conserva los entrenamientos. No permite dar de baja un plan con sesión abierta.
+
+**Respuesta correcta.** `204` sin JSON.
+
+**Errores propios.** `400` sin confirmar; `404` si no encuentra plan propio activo; `409` si hay entrenamiento en curso; `500` si falla.
+
+**Quién lo llama.** Rutinas.jsx: `eliminar`.
+
+**Cómo mostrarlo.** Intentar la baja durante un entrenamiento y explicar el 409; cerrar antes o cancelar la baja.
 
 ### `GET /api/dietas`
 
@@ -52,38 +112,6 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Mostrar las comidas de una dieta y diferenciar sus objetivos de los nutrientes calculados.
 
-### `POST /api/dietas`
-
-**Qué recibe.** Body: `nombre`, `descripcion` string, `calorias_objetivo`, `proteinas_objetivo_g`, `carbohidratos_objetivo_g`, `grasas_objetivo_g`, `comidas` (1–15); `objetivo_id` opcional. Cada comida: `nombre_comida`, `tipo_comida`, `hora` HH:mm, `alimentos` (1–30). Cada alimento: `nombre`, `cantidad`, `unidad` g/ml/porcion, `calorias`, `proteinas_g`, `carbohidratos_g`, `grasas_g` por 100 g/ml o una porción.
-
-**Qué ejecuta y consulta.** Consulta el objetivo si corresponde. En una transacción crea `Dieta` tipo manual e inserta `DietaComida` mediante `actualizarComida`. Los alimentos se conservan como JSON dentro de cada comida.
-
-**Qué valida o decide.** Metas numéricas 0–9000 (kcal enteras); nombres, tipos de comida y horarios válidos. `calcularMacros` recalcula desde alimentos y cantidades. Un objetivo nuevo asociado debe ser propio y activo.
-
-**Respuesta correcta.** `201` → cabecera creada; la interfaz recarga GET /api/dietas para detalles.
-
-**Errores propios.** `400` por entradas, alimentos, horario u objetivo inválidos; `500` si no puede guardar.
-
-**Quién lo llama.** Nutricion.jsx modo dietas: `guardar` sin id editando.
-
-**Cómo mostrarlo.** Crear un plan con desayuno y un alimento; mostrar que no suma automáticamente al consumo del día.
-
-### `PUT /api/dietas/:id`
-
-**Qué recibe.** URL `id` y body completo del POST /api/dietas.
-
-**Qué ejecuta y consulta.** Busca `Dieta` propia activa. En una transacción actualiza cabecera, destruye sus `DietaComida` antiguas y crea el conjunto nuevo; no modifica `ComidaConsumida`.
-
-**Qué valida o decide.** Metas numéricas 0–9000 (kcal enteras); nombres, tipos de comida y horarios válidos. `calcularMacros` recalcula desde alimentos y cantidades. Un objetivo nuevo asociado debe ser propio y activo. Puede mantener el mismo objetivo histórico completado que ya tenía asociado.
-
-**Respuesta correcta.** `200` → cabecera actualizada.
-
-**Errores propios.** `400` datos inválidos; `404` si no hay dieta propia activa; `500` por fallo.
-
-**Quién lo llama.** Nutricion.jsx modo dietas: `editar` carga el formulario y `guardar` elige PUT.
-
-**Cómo mostrarlo.** Cambiar horario y cantidad, guardar y explicar que los consumos previos conservan sus valores.
-
 ### `DELETE /api/dietas/:id`
 
 **Qué recibe.** URL `id`; body `confirmar: true`.
@@ -100,57 +128,24 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Cancelar una baja y explicar qué información se conservaría al confirmarla.
 
-## Funciones de apoyo: no son otros endpoints
+## Cuándo está terminado tu bloque
 
-Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asigna una ruta inexistente ni se cambia el responsable por compartir una función.
+- [ ] Listar solo dietas propias y mostrar sus comidas.
+- [ ] Agregar y quitar una comida conserva las otras.
+- [ ] Cancelar baja conserva el plan; confirmar lo excluye de los activos sin alterar consumos.
+- [ ] Explicar el recorrido desde el input hasta la respuesta, sin leer el código palabra por palabra.
+- [ ] Registrar qué revisión, cambio o comprobación hiciste realmente; si hay commit, usar la identidad real.
 
-| Función auxiliar | Para qué interviene |
-| --- | --- |
-| [datosComida](../controllers/nutricion.controller.js#L79) | Valida nombre/tipo y obtiene nutrientes calculados. |
-| [calcularMacros](../controllers/nutricion.controller.js#L4) | Suma nutrientes proporcionales a la cantidad, con redondeo. |
-| [actualizarComida](../controllers/nutricion.controller.js#L96) | Inserta una comida de dieta; no tiene una ruta HTTP independiente. |
+## Tamaño previsto y trabajo compartido
 
-## Archivos que tenés que ubicar
+Como referencia, este paquete cubre **12.81 %** de las 1.702 líneas nuevas/reemplazadas del incremento medido. Es cobertura asignada para revisar/trabajar, no un porcentaje de programación ya hecho. No mide dificultad ni tiempo y se reajusta si al trabajar aparece una diferencia de carga.
 
-- [controllers/nutricion.controller.js](../controllers/nutricion.controller.js): handlers y lógica de tus endpoints.
-- [client/src/pages/Nutricion.jsx](../client/src/pages/Nutricion.jsx): estado, formulario o carga que llama a esas rutas.
-- [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+[Plan y límites del cálculo](../docs/PLAN.md). La meta es cerca de 11 % por persona, con margen; el alcance de entrega puede quedar por encima o por debajo del nombre histórico 75. No se inflan líneas ni se atribuye código intacto como una mejora.
 
-## Lo mínimo común para defender estas rutas
+## Lectura del código
 
-Diferenciá `req.params` (id en la URL), `req.query` (filtros después de `?`), `req.body` (JSON enviado) y `req.user` (cuenta autenticada). El usuario propietario se toma de la sesión, no de un id arbitrario enviado por el formulario.
+Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.params trae el id; req.query, filtros; req.body, JSON; req.user, la cuenta autenticada. Las consultas deben restringir el propietario. Axios envía pedidos desde React y el JSON recibido está en respuesta.data. Un 204 no tiene JSON.
 
-Todos los endpoints privados pueden responder `401` si la sesión falta, vence, se cierra o la cuenta no está habilitada; el middleware puede responder `500` si falla su comprobación. No confundas estos errores compartidos con los que devuelve el handler. El parser general también puede rechazar JSON inválido (`400`) o un body demasiado grande (`413`).
+El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
-Para respuestas `204`, no hay JSON que leer. Para crear suele usarse `201`; para leer/editar, `200`. En Axios, el JSON está en `respuesta.data`; en DELETE, el body se pasa como `{data: {...}}`.
-
-No hace falta estudiar todo el sistema ni el funcionamiento interno de Vite. Sí poder seguir tu request desde la pantalla hasta las consultas y explicar una respuesta de éxito y una condición de error.
-
-## Librerías que intervienen
-
-Express, Sequelize, React y Axios. Los bucles/arrays son JavaScript; los detalles se guardan con Sequelize dentro de una transacción. Los alimentos se conservan como JSON en las comidas del plan; calcularMacros es una función propia, no una librería nutricional.
-
-## Coordinación con otros responsables
-
-- `GET /api/objetivos`: responsable **Paulo López**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
-
-Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
-
-## Cómo leer el código simplificado
-
-El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
-
-Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
-
-En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
-
-No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
-
-### Tu recorrido, paso a paso
-
-`calcularMacros` recorre alimentos y nutrientes con dos bucles tradicionales. Valida cantidad y unidad. Para gramos o mililitros calcula `nutriente * cantidad / 100`; para porciones divide por 1. Suma cada nutriente y al final redondea calorías a entero y macros a dos decimales. El servidor recalcula; no confía en un total enviado por el navegador.
-
-En React, `copiarAlimento` y `copiarComida` enumeran campos. `cambiarAlimento` copia una lista con `slice`, modifica la copia elegida y llama a `cambiarComida`. `quitarAlimento` y `quitarComida` recorren y conservan los elementos restantes. `agregarAlimento` y `agregarComida` copian y agregan con `push`. `actualizarComidas` reúne los campos de la dieta para actualizar su estado. `map` solo dibuja los campos y registros.
-
-`actualizarDieta` guarda cabecera y todas las comidas dentro de una transacción explícita. Una dieta planifica; no suma al consumo del día.
+[Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).

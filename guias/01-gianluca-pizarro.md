@@ -1,40 +1,46 @@
-# Gianluca Pizarro · endpoints de registro, sesión y estado del servidor
+# Gianluca Pizarro · próximo avance
 
-Edición **75**. Tu responsabilidad principal son los **4 endpoints de la tabla siguiente**. Las funciones auxiliares y las consultas a rutas de otros compañeros se distinguen más abajo. Esto es un reparto para estudiar y defender, no una declaración de quién escribió el código.
+**Tarea nueva:** Alimentos, validación nutricional y eliminación de consumos.
 
-## Tus endpoints concretos
+**Estado: pendiente de trabajo y verificación individual.** No es una declaración de que ya lo programaste. Se conserva tu responsabilidad de base del 50 % y se añade un recorrido concreto del incremento.
 
-| Método y ruta completa | Ruta en el código | Handler real | Acceso |
-| --- | --- | --- | --- |
-| `POST /api/registro` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L5) | [registrarUsuario](../controllers/usuarios.controller.js#L56) | Público |
-| `POST /api/login` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L6) | [iniciarSesion](../controllers/usuarios.controller.js#L156) | Público |
-| `POST /api/logout` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L10) | [cerrarSesion](../controllers/usuarios.controller.js#L208) | Sesión requerida |
-| `GET /api/salud` | [index.js](../index.js#L22) | [handler de salud](../index.js#L22) | Público |
+## Qué tenés que hacer ahora
 
-Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
+Validar alimento, unidad, cantidad y metas; seguir la fórmula de nutrientes; implementar/revisar el borrado confirmado de un consumo y comprobar que los totales disminuyen. No agregar rate limiting, correo ni las funciones retiradas.
 
-## Mapa de tus endpoints
+## Mapa de tu avance
 
 ```mermaid
 flowchart LR
-  P["Pantalla o cliente HTTP"]
-  P --> E0["POST /api/registro"]
-  E0 --> F0["registrarUsuario"]
-  F0 --> R["Respuesta HTTP"]
-  P --> E1["POST /api/login"]
-  E1 --> F1["iniciarSesion"]
-  F1 --> R["Respuesta HTTP"]
-  P --> E2["POST /api/logout"]
-  E2 --> F2["cerrarSesion"]
-  F2 --> R["Respuesta HTTP"]
-  P --> E3["GET /api/salud"]
-  E3 --> F3["handler en index.js"]
-  F3 --> R["Respuesta HTTP"]
+  U["Formulario o acción: Alimentos, validación nutricional y eliminación de consumos"]
+  U --> E0["DELETE /api/consumos/:id"]
+  E0 --> H0["eliminarConsumo"]
+  H0 --> R["Validación, MySQL o Cohere y respuesta"]
+  R --> C["Mostrar resultado y comprobarlo"]
 ```
 
-En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas y consultas concretas se explican por endpoint; el catálogo usa JSON local y `/ia/estado` lee configuración, no hacen consultas de negocio a MySQL.
+## Tus endpoints y continuidad
 
-## Explicación de cada endpoint
+| Etapa | Método y ruta | Handler real |
+| --- | --- | --- |
+| Base del 50 % | `POST /api/registro` | [registrarUsuario](../controllers/usuarios.controller.js#L56) |
+| Base del 50 % | `POST /api/login` | [iniciarSesion](../controllers/usuarios.controller.js#L156) |
+| Base del 50 % | `POST /api/logout` | [cerrarSesion](../controllers/usuarios.controller.js#L208) |
+| Base del 50 % | `GET /api/salud` | [handler de salud](../index.js#L22) |
+| Avance nuevo | `DELETE /api/consumos/:id` | [eliminarConsumo](../controllers/nutricion.controller.js#L472) |
+
+## Funciones concretas del avance
+
+| Función | Qué parte recorrés |
+| --- | --- |
+| [calcularMacros](../controllers/nutricion.controller.js#L4) | Recorre y suma nutrientes; por 100 g/ml o por porción. |
+| [datosComida](../controllers/nutricion.controller.js#L79) | Valida nombre/tipo y obtiene los nutrientes de la comida. |
+| [actualizarDieta](../controllers/nutricion.controller.js#L146) | Tu tramo compartido es la validación de metas numéricas y calorías enteras; Iván/Paulo guardan la dieta. |
+| [eliminarConsumo](../controllers/nutricion.controller.js#L472) | Borra solo el consumo propio confirmado. |
+
+Los helpers son funciones internas, no endpoints adicionales. Si una función sirve a POST y PUT o a generación y adaptación, se revisa entre los dos responsables. No hay que duplicarla ni separarla artificialmente para aparentar más código.
+
+## Entradas, consultas y respuestas de tus rutas
 
 ### `POST /api/registro`
 
@@ -100,58 +106,40 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Abrir la URL completa del endpoint y explicar qué significa su respuesta.
 
-## Funciones de apoyo: no son otros endpoints
+### `DELETE /api/consumos/:id`
 
-Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asigna una ruta inexistente ni se cambia el responsable por compartir una función.
+**Qué recibe.** URL `id`; body `confirmar: true`.
 
-| Función auxiliar | Para qué interviene |
-| --- | --- |
-| [datosPublicos](../controllers/usuarios.controller.js#L13) | Selecciona los campos de la respuesta; no es un endpoint. |
-| [abrirSesion](../controllers/usuarios.controller.js#L26) | Crea la sesión y cookie usada por registro/login; no es una ruta separada. |
-| [encriptarIrreversible](../controllers/seguridad.controller.js#L3) | Calcula bcrypt de una contraseña. |
-| [compararPassword](../controllers/seguridad.controller.js#L4) | Compara una contraseña contra el hash. |
-| [hashToken](../controllers/seguridad.controller.js#L6) | Calcula el hash del token de sesión. |
+**Qué ejecuta y consulta.** Busca `ComidaConsumida` propia y ejecuta `destroy`.
 
-## Archivos que tenés que ubicar
+**Qué valida o decide.** Es borrado de un consumo concreto; a diferencia de la dieta no se marca un estado de baja.
 
-- [controllers/usuarios.controller.js](../controllers/usuarios.controller.js): handlers y lógica de tus endpoints.
-- [client/src/pages/Acceso.jsx](../client/src/pages/Acceso.jsx): estado, formulario o carga que llama a esas rutas.
-- [client/src/App.jsx](../client/src/App.jsx): estado, formulario o carga que llama a esas rutas.
-- [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+**Respuesta correcta.** `204` sin JSON.
 
-## Lo mínimo común para defender estas rutas
+**Errores propios.** `400` sin confirmar; `404` consumo ajeno/inexistente; `500` por fallo.
 
-Diferenciá `req.params` (id en la URL), `req.query` (filtros después de `?`), `req.body` (JSON enviado) y `req.user` (cuenta autenticada). El usuario propietario se toma de la sesión, no de un id arbitrario enviado por el formulario.
+**Quién lo llama.** Nutricion.jsx modo consumos: `eliminar`; Axios manda el body de DELETE en `data`.
 
-Todos los endpoints privados pueden responder `401` si la sesión falta, vence, se cierra o la cuenta no está habilitada; el middleware puede responder `500` si falla su comprobación. No confundas estos errores compartidos con los que devuelve el handler. El parser general también puede rechazar JSON inválido (`400`) o un body demasiado grande (`413`).
+**Cómo mostrarlo.** Eliminar solo un consumo sintético y explicar por qué disminuye el total diario.
 
-Para respuestas `204`, no hay JSON que leer. Para crear suele usarse `201`; para leer/editar, `200`. En Axios, el JSON está en `respuesta.data`; en DELETE, el body se pasa como `{data: {...}}`.
+## Cuándo está terminado tu bloque
 
-No hace falta estudiar todo el sistema ni el funcionamiento interno de Vite. Sí poder seguir tu request desde la pantalla hasta las consultas y explicar una respuesta de éxito y una condición de error.
+- [ ] Registrar 50 g a 400 kcal/100 g: el servidor calcula 200 kcal.
+- [ ] Rechazar cantidades inválidas; no confiar en un total enviado desde React.
+- [ ] Cancelar eliminación conserva el consumo; confirmar lo borra y disminuye el total.
+- [ ] Explicar el recorrido desde el input hasta la respuesta, sin leer el código palabra por palabra.
+- [ ] Registrar qué revisión, cambio o comprobación hiciste realmente; si hay commit, usar la identidad real.
 
-## Librerías que intervienen
+## Tamaño previsto y trabajo compartido
 
-Express enlaza rutas con handlers; Sequelize consulta usuarios, roles y sesiones. bcrypt calcula/compara contraseñas; jsonwebtoken firma la sesión, cookie-parser lee la cookie y crypto aporta tokens/hashes. React y Axios envían los formularios; React Router navega después del ingreso.
+Como referencia, este paquete cubre **11.01 %** de las 1.702 líneas nuevas/reemplazadas del incremento medido. Es cobertura asignada para revisar/trabajar, no un porcentaje de programación ya hecho. No mide dificultad ni tiempo y se reajusta si al trabajar aparece una diferencia de carga.
 
-## Coordinación con otros responsables
+[Plan y límites del cálculo](../docs/PLAN.md). La meta es cerca de 11 % por persona, con margen; el alcance de entrega puede quedar por encima o por debajo del nombre histórico 75. No se inflan líneas ni se atribuye código intacto como una mejora.
 
-- `GET /api/cuenta`: responsable **Simón Castellani**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
+## Lectura del código
 
-Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.params trae el id; req.query, filtros; req.body, JSON; req.user, la cuenta autenticada. Las consultas deben restringir el propietario. Axios envía pedidos desde React y el JSON recibido está en respuesta.data. Un 204 no tiene JSON.
 
-## Cómo leer el código simplificado
+El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
-El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
-
-Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
-
-En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
-
-No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
-
-### Tu recorrido, paso a paso
-
-`registrarUsuario` valida, busca correo repetido y calcula el hash. Después empieza una transacción: crea usuario, asigna rol, abre sesión y registra el evento; `commit()` confirma y `rollback()` deshace ante un error. `iniciarSesion` compara con bcrypt, no descifra contraseñas. `verificarSesion` verifica el JWT, busca la sesión no vencida y coloca el usuario en `req.user`. `cerrarSesion` borra esa sesión y la cookie. El endpoint de salud solo prueba MySQL.
-
-Estas son las diferencias respecto del CRUD del repaso que tenés que aprender: bcrypt, JWT/cookie y el guardado conjunto. No necesitás implementar algoritmos criptográficos. La cookie `httpOnly` evita leer el token desde JavaScript de la pantalla; la clave del servidor no va al frontend.
+[Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).

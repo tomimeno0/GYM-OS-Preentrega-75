@@ -1,36 +1,46 @@
-# Simón Castellani · endpoints de mi cuenta y datos personales
+# Simón Castellani · próximo avance
 
-Edición **75**. Tu responsabilidad principal son los **3 endpoints de la tabla siguiente**. Las funciones auxiliares y las consultas a rutas de otros compañeros se distinguen más abajo. Esto es un reparto para estudiar y defender, no una declaración de quién escribió el código.
+**Tarea nueva:** Edición de consumos y alimentos.
 
-## Tus endpoints concretos
+**Estado: pendiente de trabajo y verificación individual.** No es una declaración de que ya lo programaste. Se conserva tu responsabilidad de base del 50 % y se añade un recorrido concreto del incremento.
 
-| Método y ruta completa | Ruta en el código | Handler real | Acceso |
-| --- | --- | --- | --- |
-| `GET /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L7) | [verCuenta](../controllers/usuarios.controller.js#L233) | Sesión requerida |
-| `PUT /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L8) | [actualizarDatos](../controllers/usuarios.controller.js#L238) | Sesión requerida |
-| `DELETE /api/cuenta` | [routes/usuarios.routes.js](../routes/usuarios.routes.js#L9) | [eliminarCuenta](../controllers/usuarios.controller.js#L306) | Sesión requerida |
+## Qué tenés que hacer ahora
 
-Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
+Abrir un consumo existente, editar alimento/cantidad/fecha y guardar por PUT. Editar o quitar alimentos sin perder otros campos; revisar las copias con Paulo. Comprobar que cambia el total del día y se mantiene el id.
 
-## Mapa de tus endpoints
+## Mapa de tu avance
 
 ```mermaid
 flowchart LR
-  P["Pantalla o cliente HTTP"]
-  P --> E0["GET /api/cuenta"]
-  E0 --> F0["verCuenta"]
-  F0 --> R["Respuesta HTTP"]
-  P --> E1["PUT /api/cuenta"]
-  E1 --> F1["actualizarDatos"]
-  F1 --> R["Respuesta HTTP"]
-  P --> E2["DELETE /api/cuenta"]
-  E2 --> F2["eliminarCuenta"]
-  F2 --> R["Respuesta HTTP"]
+  U["Formulario o acción: Edición de consumos y alimentos"]
+  U --> E0["PUT /api/consumos/:id"]
+  E0 --> H0["registrarComida"]
+  H0 --> R["Validación, MySQL o Cohere y respuesta"]
+  R --> C["Mostrar resultado y comprobarlo"]
 ```
 
-En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas y consultas concretas se explican por endpoint; el catálogo usa JSON local y `/ia/estado` lee configuración, no hacen consultas de negocio a MySQL.
+## Tus endpoints y continuidad
 
-## Explicación de cada endpoint
+| Etapa | Método y ruta | Handler real |
+| --- | --- | --- |
+| Base del 50 % | `GET /api/cuenta` | [verCuenta](../controllers/usuarios.controller.js#L233) |
+| Base del 50 % | `PUT /api/cuenta` | [actualizarDatos](../controllers/usuarios.controller.js#L238) |
+| Base del 50 % | `DELETE /api/cuenta` | [eliminarCuenta](../controllers/usuarios.controller.js#L306) |
+| Avance nuevo | `PUT /api/consumos/:id` | [registrarComida](../controllers/nutricion.controller.js#L340) |
+
+## Funciones concretas del avance
+
+| Función | Qué parte recorrés |
+| --- | --- |
+| [registrarComida](../controllers/nutricion.controller.js#L340) | Tu rama encuentra el consumo propio por id y lo actualiza. |
+| [cambiarAlimento](../client/src/pages/Nutricion.jsx#L113) | Edita una copia del alimento y reemplaza la posición. |
+| [quitarAlimento](../client/src/pages/Nutricion.jsx#L257) | Quita un alimento de la copia de lista. |
+| [editar](../client/src/pages/Nutricion.jsx#L188) | Tu rama carga consumo y fecha/hora para corrección. |
+| [copiarComidas](../client/src/pages/Nutricion.jsx#L179) | Revisión con Paulo de copia de listas; no atribuye un endpoint de dietas a tu cargo. |
+
+Los helpers son funciones internas, no endpoints adicionales. Si una función sirve a POST y PUT o a generación y adaptación, se revisa entre los dos responsables. No hay que duplicarla ni separarla artificialmente para aparentar más código.
+
+## Entradas, consultas y respuestas de tus rutas
 
 ### `GET /api/cuenta`
 
@@ -80,59 +90,40 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Abrir y cancelar la confirmación. Para probar el borrado, usar solamente una cuenta sintética propia y descartable.
 
-## Funciones de apoyo: no son otros endpoints
+### `PUT /api/consumos/:id`
 
-Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asigna una ruta inexistente ni se cambia el responsable por compartir una función.
+**Qué recibe.** URL `id` + body completo del POST /api/consumos.
 
-| Función auxiliar | Para qué interviene |
-| --- | --- |
-| [datosPublicos](../controllers/usuarios.controller.js#L13) | Selecciona los campos de la respuesta; no es un endpoint. |
-| [compararPassword](../controllers/seguridad.controller.js#L4) | Compara una contraseña contra el hash. |
-| [encriptarRreversible](../controllers/seguridad.controller.js#L8) | Cifra el teléfono. |
-| [desencriptar](../controllers/seguridad.controller.js#L30) | Recupera el teléfono para mostrarlo. |
+**Qué ejecuta y consulta.** Recalcula macros, busca `ComidaConsumida` propia por id y actualiza su copia de alimentos, fecha y totales.
 
-## Archivos que tenés que ubicar
+**Qué valida o decide.** Fecha válida desde el año 2000 y no futura. Se recalculan totales en el servidor; un total enviado aparte por el cliente no reemplaza este cálculo. Cantidades positivas y nutrientes válidos. Editar un consumo es corregir lo registrado, no cambiar una comida del plan.
 
-- [controllers/usuarios.controller.js](../controllers/usuarios.controller.js): handlers y lógica de tus endpoints.
-- [client/src/App.jsx](../client/src/App.jsx): estado, formulario o carga que llama a esas rutas.
-- [client/src/pages/Cuenta.jsx](../client/src/pages/Cuenta.jsx): estado, formulario o carga que llama a esas rutas.
-- [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+**Respuesta correcta.** `200` → consumo actualizado.
 
-## Lo mínimo común para defender estas rutas
+**Errores propios.** `400` datos inválidos; `404` consumo ajeno/inexistente; `500` por fallo.
 
-Diferenciá `req.params` (id en la URL), `req.query` (filtros después de `?`), `req.body` (JSON enviado) y `req.user` (cuenta autenticada). El usuario propietario se toma de la sesión, no de un id arbitrario enviado por el formulario.
+**Quién lo llama.** Nutricion.jsx modo consumos: `editar` llena datos y `guardar` usa PUT.
 
-Todos los endpoints privados pueden responder `401` si la sesión falta, vence, se cierra o la cuenta no está habilitada; el middleware puede responder `500` si falla su comprobación. No confundas estos errores compartidos con los que devuelve el handler. El parser general también puede rechazar JSON inválido (`400`) o un body demasiado grande (`413`).
+**Cómo mostrarlo.** Cambiar la cantidad de 50 a 100 g y comprobar que el total cambia de 200 a 400 kcal.
 
-Para respuestas `204`, no hay JSON que leer. Para crear suele usarse `201`; para leer/editar, `200`. En Axios, el JSON está en `respuesta.data`; en DELETE, el body se pasa como `{data: {...}}`.
+## Cuándo está terminado tu bloque
 
-No hace falta estudiar todo el sistema ni el funcionamiento interno de Vite. Sí poder seguir tu request desde la pantalla hasta las consultas y explicar una respuesta de éxito y una condición de error.
+- [ ] Editar 50 a 100 g cambia 200 a 400 kcal conservando id.
+- [ ] Editar/quitar un alimento conserva el resto.
+- [ ] No se puede editar un consumo de otro usuario.
+- [ ] Explicar el recorrido desde el input hasta la respuesta, sin leer el código palabra por palabra.
+- [ ] Registrar qué revisión, cambio o comprobación hiciste realmente; si hay commit, usar la identidad real.
 
-## Librerías que intervienen
+## Tamaño previsto y trabajo compartido
 
-Express y Sequelize leen/actualizan la cuenta; bcrypt comprueba la contraseña al borrar. crypto de Node cifra/descifra el teléfono mediante los helpers. React y Axios envían el perfil; React Router vuelve al inicio cuando se elimina la cuenta.
+Como referencia, este paquete cubre **10.62 %** de las 1.702 líneas nuevas/reemplazadas del incremento medido. Es cobertura asignada para revisar/trabajar, no un porcentaje de programación ya hecho. No mide dificultad ni tiempo y se reajusta si al trabajar aparece una diferencia de carga.
 
-## Coordinación con otros responsables
+[Plan y límites del cálculo](../docs/PLAN.md). La meta es cerca de 11 % por persona, con margen; el alcance de entrega puede quedar por encima o por debajo del nombre histórico 75. No se inflan líneas ni se atribuye código intacto como una mejora.
 
-- `POST /api/logout`: responsable **Gianluca Pizarro**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
+## Lectura del código
 
-Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.params trae el id; req.query, filtros; req.body, JSON; req.user, la cuenta autenticada. Las consultas deben restringir el propietario. Axios envía pedidos desde React y el JSON recibido está en respuesta.data. Un 204 no tiene JSON.
 
-## Cómo leer el código simplificado
+El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
-El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
-
-Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
-
-En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
-
-No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
-
-### Tu recorrido, paso a paso
-
-`verCuenta` prepara datos públicos sin devolver el hash de contraseña. `actualizarDatos` valida el perfil y cifra el teléfono antes de guardar. `eliminarCuenta` verifica la contraseña y la confirmación; elimina los datos relacionados dentro de una transacción y limpia la cookie.
-
-En React, `cambiar` crea `nuevosDatos` con campos explícitos, toma el nombre del input y usa `if` para distinguir checkbox de texto. Después llama a `setDatos`; no modifica directamente el objeto anterior. Las llamadas a guardar y eliminar tienen sus propios `try/catch`.
-
-La parte adicional que sí tenés que conocer es la diferencia entre hash y cifrado: bcrypt comprueba contraseñas sin recuperarlas; AES permite recuperar el teléfono con la clave del servidor. `encriptarRreversible` y `desencriptar` están aisladas en seguridad.controller.js. Se conservó AES para no exponer teléfonos ni volver ilegibles los datos existentes. No necesitás estudiar la matemática del algoritmo, pero sí sus entradas, salidas y dónde se mantiene la clave.
+[Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).

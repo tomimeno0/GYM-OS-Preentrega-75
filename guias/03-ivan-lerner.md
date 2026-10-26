@@ -1,36 +1,43 @@
-# Iván Lerner · endpoints de entrenamientos e historial
+# Iván Lerner · próximo avance
 
-Edición **75**. Tu responsabilidad principal son los **3 endpoints de la tabla siguiente**. Las funciones auxiliares y las consultas a rutas de otros compañeros se distinguen más abajo. Esto es un reparto para estudiar y defender, no una declaración de quién escribió el código.
+**Tarea nueva:** Creación de dietas.
 
-## Tus endpoints concretos
+**Estado: pendiente de trabajo y verificación individual.** No es una declaración de que ya lo programaste. Se conserva tu responsabilidad de base del 50 % y se añade un recorrido concreto del incremento.
 
-| Método y ruta completa | Ruta en el código | Handler real | Acceso |
-| --- | --- | --- | --- |
-| `GET /api/entrenamientos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L24) | [listarEntrenamientos](../controllers/entrenamientos.controller.js#L8) | Sesión requerida |
-| `POST /api/entrenamientos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L25) | [iniciarEntrenamiento](../controllers/entrenamientos.controller.js#L39) | Sesión requerida |
-| `PUT /api/entrenamientos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L26) | [actualizarRegistro](../controllers/entrenamientos.controller.js#L140) | Sesión requerida |
+## Qué tenés que hacer ahora
 
-Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
+Recorrer el formulario de plan nuevo, su POST, el objetivo propio y el guardado de cabecera y comidas. Coordinar los campos del plan con Paulo y el editor de comidas con Valentín.
 
-## Mapa de tus endpoints
+## Mapa de tu avance
 
 ```mermaid
 flowchart LR
-  P["Pantalla o cliente HTTP"]
-  P --> E0["GET /api/entrenamientos"]
-  E0 --> F0["listarEntrenamientos"]
-  F0 --> R["Respuesta HTTP"]
-  P --> E1["POST /api/entrenamientos"]
-  E1 --> F1["iniciarEntrenamiento"]
-  F1 --> R["Respuesta HTTP"]
-  P --> E2["PUT /api/entrenamientos/:id"]
-  E2 --> F2["actualizarRegistro"]
-  F2 --> R["Respuesta HTTP"]
+  U["Formulario o acción: Creación de dietas"]
+  U --> E0["POST /api/dietas"]
+  E0 --> H0["actualizarDieta"]
+  H0 --> R["Validación, MySQL o Cohere y respuesta"]
+  R --> C["Mostrar resultado y comprobarlo"]
 ```
 
-En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas y consultas concretas se explican por endpoint; el catálogo usa JSON local y `/ia/estado` lee configuración, no hacen consultas de negocio a MySQL.
+## Tus endpoints y continuidad
 
-## Explicación de cada endpoint
+| Etapa | Método y ruta | Handler real |
+| --- | --- | --- |
+| Base del 50 % | `GET /api/entrenamientos` | [listarEntrenamientos](../controllers/entrenamientos.controller.js#L8) |
+| Base del 50 % | `POST /api/entrenamientos` | [iniciarEntrenamiento](../controllers/entrenamientos.controller.js#L39) |
+| Base del 50 % | `PUT /api/entrenamientos/:id` | [actualizarRegistro](../controllers/entrenamientos.controller.js#L140) |
+| Avance nuevo | `POST /api/dietas` | [actualizarDieta](../controllers/nutricion.controller.js#L146) |
+
+## Funciones concretas del avance
+
+| Función | Qué parte recorrés |
+| --- | --- |
+| [actualizarDieta](../controllers/nutricion.controller.js#L146) | Tu rama principal es crear sin req.params.id. Las validaciones generales y la transacción se revisan con Paulo. |
+| [guardar](../client/src/pages/Nutricion.jsx#L130) | Tu recorrido termina en POST /dietas sin editando; no incluye consumos. |
+
+Los helpers son funciones internas, no endpoints adicionales. Si una función sirve a POST y PUT o a generación y adaptación, se revisa entre los dos responsables. No hay que duplicarla ni separarla artificialmente para aparentar más código.
+
+## Entradas, consultas y respuestas de tus rutas
 
 ### `GET /api/entrenamientos`
 
@@ -80,57 +87,40 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Guardar avance, marcar realizado y cerrar completo con confirmación; explicar por qué después ya no se edita.
 
-## Funciones de apoyo: no son otros endpoints
+### `POST /api/dietas`
 
-Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asigna una ruta inexistente ni se cambia el responsable por compartir una función.
+**Qué recibe.** Body: `nombre`, `descripcion` string, `calorias_objetivo`, `proteinas_objetivo_g`, `carbohidratos_objetivo_g`, `grasas_objetivo_g`, `comidas` (1–15); `objetivo_id` opcional. Cada comida: `nombre_comida`, `tipo_comida`, `hora` HH:mm, `alimentos` (1–30). Cada alimento: `nombre`, `cantidad`, `unidad` g/ml/porcion, `calorias`, `proteinas_g`, `carbohidratos_g`, `grasas_g` por 100 g/ml o una porción.
 
-| Función auxiliar | Para qué interviene |
-| --- | --- |
-| Lógica dentro de los handlers | No tiene una función auxiliar local adicional asignada. Consultá las relaciones de modelos y las funciones React del recorrido. |
+**Qué ejecuta y consulta.** Consulta el objetivo si corresponde. En una transacción crea `Dieta` tipo manual e inserta `DietaComida` mediante `actualizarComida`. Los alimentos se conservan como JSON dentro de cada comida.
 
-## Archivos que tenés que ubicar
+**Qué valida o decide.** Metas numéricas 0–9000 (kcal enteras); nombres, tipos de comida y horarios válidos. `calcularMacros` recalcula desde alimentos y cantidades. Un objetivo nuevo asociado debe ser propio y activo.
 
-- [controllers/entrenamientos.controller.js](../controllers/entrenamientos.controller.js): handlers y lógica de tus endpoints.
-- [client/src/pages/Entrenamientos.jsx](../client/src/pages/Entrenamientos.jsx): estado, formulario o carga que llama a esas rutas.
-- [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+**Respuesta correcta.** `201` → cabecera creada; la interfaz recarga GET /api/dietas para detalles.
 
-## Lo mínimo común para defender estas rutas
+**Errores propios.** `400` por entradas, alimentos, horario u objetivo inválidos; `500` si no puede guardar.
 
-Diferenciá `req.params` (id en la URL), `req.query` (filtros después de `?`), `req.body` (JSON enviado) y `req.user` (cuenta autenticada). El usuario propietario se toma de la sesión, no de un id arbitrario enviado por el formulario.
+**Quién lo llama.** Nutricion.jsx modo dietas: `guardar` sin id editando.
 
-Todos los endpoints privados pueden responder `401` si la sesión falta, vence, se cierra o la cuenta no está habilitada; el middleware puede responder `500` si falla su comprobación. No confundas estos errores compartidos con los que devuelve el handler. El parser general también puede rechazar JSON inválido (`400`) o un body demasiado grande (`413`).
+**Cómo mostrarlo.** Crear un plan con desayuno y un alimento; mostrar que no suma automáticamente al consumo del día.
 
-Para respuestas `204`, no hay JSON que leer. Para crear suele usarse `201`; para leer/editar, `200`. En Axios, el JSON está en `respuesta.data`; en DELETE, el body se pasa como `{data: {...}}`.
+## Cuándo está terminado tu bloque
 
-No hace falta estudiar todo el sistema ni el funcionamiento interno de Vite. Sí poder seguir tu request desde la pantalla hasta las consultas y explicar una respuesta de éxito y una condición de error.
+- [ ] Crear dieta con al menos dos comidas y comprobar detalles.
+- [ ] Rechazar objetivo ajeno y calorías objetivo no enteras.
+- [ ] Un fallo en un detalle revierte toda la creación.
+- [ ] Explicar el recorrido desde el input hasta la respuesta, sin leer el código palabra por palabra.
+- [ ] Registrar qué revisión, cambio o comprobación hiciste realmente; si hay commit, usar la identidad real.
 
-## Librerías que intervienen
+## Tamaño previsto y trabajo compartido
 
-Express y Sequelize consultan planes y guardan sesión/ejercicios. Las transacciones de Sequelize agrupan la operación; la restricción de la base impide dos sesiones activas. React y Axios manejan el formulario y el historial.
+Como referencia, este paquete cubre **11.90 %** de las 1.702 líneas nuevas/reemplazadas del incremento medido. Es cobertura asignada para revisar/trabajar, no un porcentaje de programación ya hecho. No mide dificultad ni tiempo y se reajusta si al trabajar aparece una diferencia de carga.
 
-## Coordinación con otros responsables
+[Plan y límites del cálculo](../docs/PLAN.md). La meta es cerca de 11 % por persona, con margen; el alcance de entrega puede quedar por encima o por debajo del nombre histórico 75. No se inflan líneas ni se atribuye código intacto como una mejora.
 
-- `GET /api/rutinas`: responsable **Joaquín Casanou**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
+## Lectura del código
 
-Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.params trae el id; req.query, filtros; req.body, JSON; req.user, la cuenta autenticada. Las consultas deben restringir el propietario. Axios envía pedidos desde React y el JSON recibido está en respuesta.data. Un 204 no tiene JSON.
 
-## Cómo leer el código simplificado
+El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
-El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
-
-Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
-
-En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
-
-No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
-
-### Tu recorrido, paso a paso
-
-`listarEntrenamientos` ya no recorre y ordena en JavaScript. El `order` de Sequelize solicita a MySQL entrenamientos por `fecha_inicio DESC` y sus ejercicios por `orden ASC`. `include` trae los detalles relacionados.
-
-`iniciarEntrenamiento` busca una rutina propia y sus ejercicios del día. Recorre los ejercicios con un `for` tradicional y crea una copia para ese entrenamiento. Todo se guarda junto dentro de una transacción. Cambiar después la rutina no cambia esa copia histórica.
-
-`actualizarRegistro` recorre cada ejercicio recibido; un segundo bucle busca su id entre los originales. Rechaza ids ajenos y repetidos y cuenta `cantidadRealizados`. Completado exige todos; incompleto exige al menos uno. Para guardar, vuelve a comprobar el entrenamiento dentro de la transacción con un bloqueo de fila, actualiza detalles y cabecera y confirma. Si falla, revierte. El bloqueo evita que dos pedidos cierren simultáneamente la misma sesión; no es una capa nueva.
-
-En React, `cargar` busca el iniciado con un bucle y prepara las rutinas activas. `cambiar` copia la lista con `slice`, construye el ejercicio modificado y llama a `setActual` con un objeto nuevo. `entrenamientosAnteriores` separa el historial antes de dibujarlo.
+[Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).

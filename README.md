@@ -54,3 +54,7 @@ La lógica usa bucles tradicionales, if/else y llamadas directas a Sequelize. Lo
 
 - [Criterio del profesor y diferencias conservadas](docs/CRITERIO-DEL-PROFESOR.md)
 - [Pruebas de esta revisión y límites](docs/VERIFICACION.md)
+
+## Avance equilibrado entre los nueve
+
+El reparto actual conserva las responsabilidades de base del 50 % y da un paquete nuevo a cada integrante. Las guías describen tareas pendientes, endpoints, funciones, diagramas y casos de comprobación; no certifican autoría. El alcance de la entrega es flexible: el nombre histórico 75 no es una cuota rígida. Consultá el [plan actualizado](docs/PLAN.md) y las [nueve guías](guias/README.md).

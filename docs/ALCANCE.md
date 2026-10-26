@@ -11,3 +11,7 @@ La arquitectura es la del curso: CommonJS, rutas, controladores y modelos explí
 Las columnas dvh del DER quedan reservadas; no se implementan DVH/DVV. Los nombres UML del corte se usan como funciones, no como una jerarquía de clases. El pedido actual excluye expresamente la operación retirada, aunque aparezca en el documento original.
 
 No hay administración ni generación/adaptación de dietas IA. Los nutrientes de alimentos se ingresan manualmente; no existe un proveedor externo de alimentos. El proyecto completo original no se modifica.
+
+## Reparto del avance · 26/10/2026
+
+El nombre 75 es una referencia histórica; no obliga a alcanzar un porcentaje exacto. Se adopta un [plan de trabajo equilibrado para los nueve](PLAN.md), con paquetes pendientes y cobertura prevista de 9,28 % a 13,04 %. Esta actualización de documentación no cambia el alcance ejecutable ni acredita aportes realizados.

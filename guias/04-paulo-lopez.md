@@ -1,40 +1,46 @@
-# Paulo López · endpoints de objetivos personales
+# Paulo López · próximo avance
 
-Edición **75**. Tu responsabilidad principal son los **4 endpoints de la tabla siguiente**. Las funciones auxiliares y las consultas a rutas de otros compañeros se distinguen más abajo. Esto es un reparto para estudiar y defender, no una declaración de quién escribió el código.
+**Tarea nueva:** Edición de dietas.
 
-## Tus endpoints concretos
+**Estado: pendiente de trabajo y verificación individual.** No es una declaración de que ya lo programaste. Se conserva tu responsabilidad de base del 50 % y se añade un recorrido concreto del incremento.
 
-| Método y ruta completa | Ruta en el código | Handler real | Acceso |
-| --- | --- | --- | --- |
-| `GET /api/objetivos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L15) | [visuaizarObjetivo](../controllers/objetivos.controller.js#L4) | Sesión requerida |
-| `POST /api/objetivos` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L16) | [definirObjeto](../controllers/objetivos.controller.js#L27) | Sesión requerida |
-| `POST /api/objetivos/:id/completar` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L17) | [marcarCompletado](../controllers/objetivos.controller.js#L206) | Sesión requerida |
-| `DELETE /api/objetivos/:id` | [routes/gimnasio.routes.js](../routes/gimnasio.routes.js#L18) | [eliminarObjetivo](../controllers/objetivos.controller.js#L246) | Sesión requerida |
+## Qué tenés que hacer ahora
 
-Las URLs de esta tabla incluyen `/api`. En React vas a ver llamadas como `axios.get("/cuenta")`: [App.jsx](../client/src/App.jsx) configura `axios.defaults.baseURL = "/api"`. No existe una ruta extra por cada función interna.
+Recuperar un plan existente, modificarlo y guardarlo con PUT sin crear otro id. Revisar con Iván el handler compartido y con Simón la copia de listas. Demostrar que una edición inválida conserva lo anterior.
 
-## Mapa de tus endpoints
+## Mapa de tu avance
 
 ```mermaid
 flowchart LR
-  P["Pantalla o cliente HTTP"]
-  P --> E0["GET /api/objetivos"]
-  E0 --> F0["visuaizarObjetivo"]
-  F0 --> R["Respuesta HTTP"]
-  P --> E1["POST /api/objetivos"]
-  E1 --> F1["definirObjeto"]
-  F1 --> R["Respuesta HTTP"]
-  P --> E2["POST /api/objetivos/:id/completar"]
-  E2 --> F2["marcarCompletado"]
-  F2 --> R["Respuesta HTTP"]
-  P --> E3["DELETE /api/objetivos/:id"]
-  E3 --> F3["eliminarObjetivo"]
-  F3 --> R["Respuesta HTTP"]
+  U["Formulario o acción: Edición de dietas"]
+  U --> E0["PUT /api/dietas/:id"]
+  E0 --> H0["actualizarDieta"]
+  H0 --> R["Validación, MySQL o Cohere y respuesta"]
+  R --> C["Mostrar resultado y comprobarlo"]
 ```
 
-En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas y consultas concretas se explican por endpoint; el catálogo usa JSON local y `/ia/estado` lee configuración, no hacen consultas de negocio a MySQL.
+## Tus endpoints y continuidad
 
-## Explicación de cada endpoint
+| Etapa | Método y ruta | Handler real |
+| --- | --- | --- |
+| Base del 50 % | `GET /api/objetivos` | [visuaizarObjetivo](../controllers/objetivos.controller.js#L4) |
+| Base del 50 % | `POST /api/objetivos` | [definirObjeto](../controllers/objetivos.controller.js#L27) |
+| Base del 50 % | `POST /api/objetivos/:id/completar` | [marcarCompletado](../controllers/objetivos.controller.js#L206) |
+| Base del 50 % | `DELETE /api/objetivos/:id` | [eliminarObjetivo](../controllers/objetivos.controller.js#L246) |
+| Avance nuevo | `PUT /api/dietas/:id` | [actualizarDieta](../controllers/nutricion.controller.js#L146) |
+
+## Funciones concretas del avance
+
+| Función | Qué parte recorrés |
+| --- | --- |
+| [actualizarDieta](../controllers/nutricion.controller.js#L146) | Tu rama principal busca la dieta propia por id y reemplaza cabecera/detalles dentro de una transacción. |
+| [editar](../client/src/pages/Nutricion.jsx#L188) | Tu rama carga una dieta existente. |
+| [copiarComidas](../client/src/pages/Nutricion.jsx#L179) | Revisión compartida con Simón de la copia de listas, sin mutar el original. |
+| [guardar](../client/src/pages/Nutricion.jsx#L130) | Tu recorrido usa PUT /dietas/:id con editando. |
+
+Los helpers son funciones internas, no endpoints adicionales. Si una función sirve a POST y PUT o a generación y adaptación, se revisa entre los dos responsables. No hay que duplicarla ni separarla artificialmente para aparentar más código.
+
+## Entradas, consultas y respuestas de tus rutas
 
 ### `GET /api/objetivos`
 
@@ -100,53 +106,40 @@ En los endpoints privados, `verificarSesion` corre antes del handler. Las tablas
 
 **Cómo mostrarlo.** Explicar la diferencia entre dejar de mostrar una meta y borrar una cuenta definitivamente.
 
-## Funciones de apoyo: no son otros endpoints
+### `PUT /api/dietas/:id`
 
-Conocé para qué sirven cuando aparecen en el recorrido de tus rutas. No se asigna una ruta inexistente ni se cambia el responsable por compartir una función.
+**Qué recibe.** URL `id` y body completo del POST /api/dietas.
 
-| Función auxiliar | Para qué interviene |
-| --- | --- |
-| Lógica dentro de los handlers | No tiene una función auxiliar local adicional asignada. Consultá las relaciones de modelos y las funciones React del recorrido. |
+**Qué ejecuta y consulta.** Busca `Dieta` propia activa. En una transacción actualiza cabecera, destruye sus `DietaComida` antiguas y crea el conjunto nuevo; no modifica `ComidaConsumida`.
 
-## Archivos que tenés que ubicar
+**Qué valida o decide.** Metas numéricas 0–9000 (kcal enteras); nombres, tipos de comida y horarios válidos. `calcularMacros` recalcula desde alimentos y cantidades. Un objetivo nuevo asociado debe ser propio y activo. Puede mantener el mismo objetivo histórico completado que ya tenía asociado.
 
-- [controllers/objetivos.controller.js](../controllers/objetivos.controller.js): handlers y lógica de tus endpoints.
-- [client/src/pages/Objetivos.jsx](../client/src/pages/Objetivos.jsx): estado, formulario o carga que llama a esas rutas.
-- [models/index.js](../models/index.js): relaciones; seguí desde ahí solo los modelos usados en tus consultas.
-- [auth.controller.js](../controllers/auth.controller.js#L5): antes de un handler privado comprueba cookie, JWT, sesión persistida y cuenta activa; deja el usuario en `req.user`.
+**Respuesta correcta.** `200` → cabecera actualizada.
 
-## Lo mínimo común para defender estas rutas
+**Errores propios.** `400` datos inválidos; `404` si no hay dieta propia activa; `500` por fallo.
 
-Diferenciá `req.params` (id en la URL), `req.query` (filtros después de `?`), `req.body` (JSON enviado) y `req.user` (cuenta autenticada). El usuario propietario se toma de la sesión, no de un id arbitrario enviado por el formulario.
+**Quién lo llama.** Nutricion.jsx modo dietas: `editar` carga el formulario y `guardar` elige PUT.
 
-Todos los endpoints privados pueden responder `401` si la sesión falta, vence, se cierra o la cuenta no está habilitada; el middleware puede responder `500` si falla su comprobación. No confundas estos errores compartidos con los que devuelve el handler. El parser general también puede rechazar JSON inválido (`400`) o un body demasiado grande (`413`).
+**Cómo mostrarlo.** Cambiar horario y cantidad, guardar y explicar que los consumos previos conservan sus valores.
 
-Para respuestas `204`, no hay JSON que leer. Para crear suele usarse `201`; para leer/editar, `200`. En Axios, el JSON está en `respuesta.data`; en DELETE, el body se pasa como `{data: {...}}`.
+## Cuándo está terminado tu bloque
 
-No hace falta estudiar todo el sistema ni el funcionamiento interno de Vite. Sí poder seguir tu request desde la pantalla hasta las consultas y explicar una respuesta de éxito y una condición de error.
+- [ ] Editar dieta conserva id y reemplaza correctamente sus detalles.
+- [ ] Un id ajeno o inexistente se rechaza.
+- [ ] Un fallo en el segundo detalle mantiene la versión anterior completa.
+- [ ] Explicar el recorrido desde el input hasta la respuesta, sin leer el código palabra por palabra.
+- [ ] Registrar qué revisión, cambio o comprobación hiciste realmente; si hay commit, usar la identidad real.
 
-## Librerías que intervienen
+## Tamaño previsto y trabajo compartido
 
-Express y Sequelize, con Op para filtros; Intl de JavaScript calcula fechas en la zona de la cuenta. React y Axios muestran y envían las metas.
+Como referencia, este paquete cubre **13.04 %** de las 1.702 líneas nuevas/reemplazadas del incremento medido. Es cobertura asignada para revisar/trabajar, no un porcentaje de programación ya hecho. No mide dificultad ni tiempo y se reajusta si al trabajar aparece una diferencia de carga.
 
-## Coordinación con otros responsables
+[Plan y límites del cálculo](../docs/PLAN.md). La meta es cerca de 11 % por persona, con margen; el alcance de entrega puede quedar por encima o por debajo del nombre histórico 75. No se inflan líneas ni se atribuye código intacto como una mejora.
 
-- `GET /api/mediciones`: responsable **Gade Silva y Lápiz**. Entendé qué recibe y devuelve; no se vuelve a asignar como endpoint tuyo.
+## Lectura del código
 
-Consultá el [reparto completo](README.md) y el [alcance](../docs/ALCANCE.md) antes de prometer una ruta de otra entrega.
+Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.params trae el id; req.query, filtros; req.body, JSON; req.user, la cuenta autenticada. Las consultas deben restringir el propietario. Axios envía pedidos desde React y el JSON recibido está en respuesta.data. Un 204 no tiene JSON.
 
-## Cómo leer el código simplificado
+El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
-El recorrido sigue siendo pantalla React → ruta Express → controlador → modelo Sequelize → MySQL. No hay una capa de servicios. Las decisiones de negocio usan `if`/`else` y los recorridos usan `for (let i = 0; i < lista.length; i++)`. En cada vuelta, `lista[i]` es el elemento de esa posición; el nombre de la lista no tiene significado especial para JavaScript.
-
-Se quitaron `for...of`, `?.`, `??` y `...` del código de controladores y pantallas. Los controladores ya no usan callbacks de `map`, `filter`, `find` o `some` ni comparadores de `sort`: las búsquedas, validaciones y cálculos están desplegados en bucles. En los formularios se construye una copia con los campos explícitos antes de llamar al setter de React; `slice()` copia una lista y `push()` agrega un elemento. No hay que modificar directamente el estado anterior.
-
-En JSX se mantiene `map` únicamente para dibujar listas de elementos. Por ejemplo, `items.map((rutina) => <...>)` produce un bloque visual por rutina; no guarda datos ni llama a MySQL. `key` identifica cada fila para React. Algunas etiquetas usan un condicional sencillo `condicion ? textoSi : textoNo`; la validación del servidor está escrita con `if`. Las funciones de evento con `=>` y la desestructuración también aparecen en los ejemplos del curso: no son otra arquitectura.
-
-No se afirma que todo el proyecto sea idéntico al repaso. El sistema tiene más funciones que un CRUD de ejemplo. Las protecciones conservadas se explican abajo según tu recorrido. [Criterio y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
-
-### Tu recorrido, paso a paso
-
-`definirObjeto` valida nombre, tipo, fechas y unidad; busca la última medición y comprueba que no exista otro objetivo activo. Usa `if`/`else` para elegir el valor inicial según el tipo: peso, porcentaje de grasa, distancia o frecuencia. No calcula el avance en esta operación.
-
-En React, `unidad` se decide con `if`/`else if`; un bucle determina `hayObjetivoActivo`. `guardar` arma explícitamente los campos del body y convierte los numéricos con `Number`. `cambiar` distingue completar de eliminar y solicita confirmación. La fecha de cierre evita que mediciones futuras cambien el resultado de un objetivo terminado; el cálculo de progreso lo consulta otro endpoint.
+[Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
