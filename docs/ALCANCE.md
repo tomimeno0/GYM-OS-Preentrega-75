@@ -15,3 +15,7 @@ No hay administración ni generación/adaptación de dietas IA. Los nutrientes d
 ## Reparto del avance · 26/10/2026
 
 El nombre 75 es una referencia histórica; no obliga a alcanzar un porcentaje exacto. Se adopta un [plan de trabajo equilibrado para los nueve](PLAN.md), con paquetes pendientes y cobertura prevista de 9,28 % a 13,04 %. Esta actualización de documentación no cambia el alcance ejecutable ni acredita aportes realizados.
+
+## Ampliación posterior al corte
+
+Se añade recuperación por correo con dos endpoints y pantallas públicas, asignada a Gianluca para estudio y revisión. El conteo 28/39 y los porcentajes del avance documentan el corte previo y no incluyen esta incorporación. El envío real requiere configurar SMTP.

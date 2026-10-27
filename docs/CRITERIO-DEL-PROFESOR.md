@@ -29,6 +29,6 @@ No es correcto afirmar que todo el sistema es idéntico a un CRUD de usuarios y 
 | Fecha, zona horaria, UUID y asociaciones Sequelize | Mantienen identificadores y el significado del día del usuario. Las relaciones se declaran en models/index.js y los include se explican por endpoint. |
 | API externa y límite de espera | Cohere se llama desde el servidor con clave privada y JSON validado. La espera máxima es 45 segundos, sin reintentos automáticos ni respuesta simulada. |
 
-Los temas 45, 46 y 47 retirados siguen fuera: recuperación/restablecimiento de contraseña y correo, limitación de intentos y comprobación de origen/cabecera especial. No se reintrodujeron. Se mantienen validación de datos, consentimiento IA y confirmaciones.
+Por pedido posterior de Tomás, se reincorpora recuperación/restablecimiento de contraseña por correo con un controlador y un modelo. Continúan fuera la limitación de intentos y la comprobación de origen/cabecera especial. Se mantienen validación de datos, consentimiento IA y confirmaciones.
 
 No se copia sync({force:true}) del ejercicio porque borraría datos. No se modifican bases históricas, puertos ni cookies de otra edición. Las pruebas usan cuentas sintéticas; no certifican producción ni ausencia total de errores. Hay nueve guías por edición y el reparto expresa responsabilidad de estudio, no autoría histórica.

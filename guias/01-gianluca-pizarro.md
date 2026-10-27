@@ -6,7 +6,7 @@
 
 ## Qué tenés que hacer ahora
 
-Validar alimento, unidad, cantidad y metas; seguir la fórmula de nutrientes; implementar/revisar el borrado confirmado de un consumo y comprobar que los totales disminuyen. No agregar rate limiting, correo ni las funciones retiradas.
+Validar alimento, unidad, cantidad y metas; seguir la fórmula de nutrientes; implementar/revisar el borrado confirmado de un consumo y comprobar que los totales disminuyen. Se mantiene fuera rate limiting. La recuperación por correo se incorpora en la ampliación al final de esta guía.
 
 ## Mapa de tu avance
 
@@ -143,3 +143,60 @@ Pantalla React → ruta Express → controlador → Sequelize → MySQL. req.par
 El backend usa for tradicional, if/else, async/await y try/catch. En JSX, map dibuja listas. Las transacciones con commit/rollback evitan guardados parciales; el cifrado, hash y sesión conservan cuentas y datos existentes. La clave de Cohere permanece en el servidor. No se reintroducen los temas retirados ni capas de servicios.
 
 [Criterio del profesor y diferencias conservadas](../docs/CRITERIO-DEL-PROFESOR.md).
+
+## Recuperación de contraseña · ampliación solicitada
+
+Esta función vuelve a incorporarse por pedido de Tomás. Te corresponde como responsable de registro, login y sesiones. Es responsabilidad de estudio y revisión, no atribución de autoría.
+
+### Mapa del recorrido
+
+```mermaid
+flowchart TD
+  A["Login: Olvidé mi contraseña"] --> B["POST /api/recuperar-password: email"]
+  B --> C["Buscar cuenta activa y crear token aleatorio"]
+  C --> D["MySQL: guardar solo hash y vencimiento"]
+  D --> E["Nodemailer: enviar enlace por SMTP"]
+  E --> F["Usuario abre /restablecer con token"]
+  F --> G["POST /api/restablecer-password: token y password"]
+  G --> H["Comprobar token y plazo con bloqueo de fila"]
+  H --> I["Transacción: bcrypt, borrar sesiones y token"]
+  I --> J["Volver al login con contraseña nueva"]
+```
+
+### Archivos y funciones que tenés que entender
+
+- `routes/usuarios.routes.js` agrega dos rutas públicas de recuperación. No requieren sesión porque justamente el usuario perdió el acceso.
+- `controllers/recuperacion.controller.js`, `solicitarRecuperacion(req, res)`: valida el correo, verifica configuración SMTP y busca un usuario activo. `tokenNuevo()` crea un valor aleatorio de 32 bytes; `hashToken()` calcula su SHA-256. `Recuperacion.upsert()` crea o reemplaza la solicitud de ese usuario y fija 15 minutos de vigencia. Nodemailer crea el transporte y `sendMail()` envía el enlace. Si el envío falla, elimina esa solicitud y devuelve 503. No devuelve el token al navegador ni revela si el correo existe cuando la solicitud se procesa correctamente.
+- `restablecerPassword(req, res)`: recibe `token` y `password`, valida sus formatos y calcula bcrypt. Busca el hash del token dentro de una transacción con bloqueo de fila, comprueba el vencimiento y la cuenta activa, cambia el hash de contraseña, elimina las sesiones del usuario y borra la solicitud. `commit()` confirma las tres operaciones juntas; `rollback()` las deshace si ocurre un error. El bloqueo impide que dos solicitudes simultáneas usen el mismo enlace.
+- `models/Recuperacion.model.js`: tabla `recuperaciones`, con `id`, `usuario_id` único, `token_hash` único y `fecha_expiracion`. Nunca guarda la contraseña ni el token de recuperación en texto plano. `models/index.js` relaciona la solicitud con el usuario y la elimina en cascada al borrar la cuenta.
+- `client/src/pages/Recuperar.jsx`, `enviar(e)`: maneja la solicitud del correo o el envío de la contraseña nueva con Axios. Comprueba que ambas contraseñas coincidan, muestra errores, desactiva el botón durante el envío y limpia el usuario de React después del cambio. Lee el token del fragmento `#` del enlace y lo retira de la barra de direcciones; se envía solo en el body de la petición. Un enlace sin token no permite guardar.
+- `client/src/App.jsx`: publica `/recuperar` y `/restablecer`. `Acceso.jsx`: enlace «Olvidé mi contraseña».
+
+### Endpoints, entradas y respuestas
+
+| Método y ruta | Entrada JSON | Resultado |
+| --- | --- | --- |
+| `POST /api/recuperar-password` | `email` | 200 con mensaje genérico; 400 por formato; 503 sin SMTP configurado o si falla el envío. |
+| `POST /api/restablecer-password` | `token`, `password` | 200 si cambia; 400 por enlace inválido, usado o vencido, o contraseña inválida; 500 si falla el guardado. |
+
+Se mantienen los mismos límites de contraseña del registro: mínimo 10 caracteres y máximo 72 bytes UTF-8. Recuperar no inicia sesión automáticamente: el usuario vuelve al login. Todas las sesiones anteriores quedan invalidadas.
+
+### Librerías y configuración
+
+Express maneja rutas y respuestas; Sequelize consulta MySQL y agrupa los cambios; `node:crypto` genera tokens y hashes; bcrypt protege la contraseña; React mantiene el formulario; Axios llama a la API. **Nodemailer** es la biblioteca nueva para enviar correo mediante SMTP, dentro del controlador, sin agregar una capa de servicios.
+
+Configurar en `.env`: `APP_URL` (dirección real de la aplicación), `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_FROM` y, si el proveedor requiere autenticación, `SMTP_USER` y `SMTP_PASSWORD`. Para puerto 465 se usa `SMTP_SECURE=true`; para 587, `false` con STARTTLS del servidor. No subir credenciales al repositorio. Ver [documentación oficial de Nodemailer](https://nodemailer.com/smtp).
+
+La tabla se crea con `npm run db:iniciar`, que no borra las tablas existentes. En esta Mac ya se creó solo la tabla nueva. **No se configuró una cuenta SMTP real:** hasta hacerlo, la pantalla informa que el envío no está disponible. No se simula un correo enviado.
+
+### Qué demostrar y qué explicar
+
+1. Solicitar enlace para una cuenta de prueba y abrir el correo en el entorno SMTP elegido.
+2. Probar contraseñas que no coincidan y una demasiado corta.
+3. Cambiar la contraseña: la anterior falla y la nueva permite iniciar sesión.
+4. Mostrar que una sesión previa deja de funcionar y el enlace no se puede reutilizar.
+5. Explicar token aleatorio, hash del token, vencimiento, bcrypt y transacción. No son lo mismo: el token autoriza una recuperación, bcrypt protege la contraseña.
+
+Verificación realizada con HTTP y MySQL reales y transporte de correo simulado: solicitud, cuenta inexistente, hash, validaciones, vencimiento, reemplazo de enlace, cambio, revocación de sesiones, reutilización rechazada, login viejo/nuevo, dos cambios simultáneos, fallo SMTP y falta de configuración. La entrega a un buzón real queda pendiente de configurar SMTP.
+
+Los porcentajes del reparto anterior corresponden al corte previo: esta ampliación no está incluida en ese cálculo.

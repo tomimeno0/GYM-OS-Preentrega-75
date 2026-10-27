@@ -124,6 +124,7 @@ export default function Acceso({ modo, setUsuario }) {
         <div className="enlaces">
           <Link to="/login">Iniciar sesión</Link>
           <Link to="/registro">Crear cuenta</Link>
+          <Link to="/recuperar">Olvidé mi contraseña</Link>
         </div>
       </div>
     </main>

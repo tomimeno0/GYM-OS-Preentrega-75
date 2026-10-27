@@ -1,7 +1,10 @@
 const express = require("express");
 const { verificarSesion } = require("../controllers/auth.controller");
 const usuarios = require("../controllers/usuarios.controller");
+const recuperacion = require("../controllers/recuperacion.controller");
 const router = express.Router();
+router.post("/recuperar-password", recuperacion.solicitarRecuperacion);
+router.post("/restablecer-password", recuperacion.restablecerPassword);
 router.post("/registro", usuarios.registrarUsuario);
 router.post("/login", usuarios.iniciarSesion);
 router.get("/cuenta", verificarSesion, usuarios.verCuenta);

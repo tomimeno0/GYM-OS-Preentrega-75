@@ -10,6 +10,7 @@ import {
 import axios from "axios";
 import Confirmar from "./components/Confirmar";
 import Acceso from "./pages/Acceso";
+import Recuperar from "./pages/Recuperar";
 import Cuenta from "./pages/Cuenta";
 import Progreso from "./pages/Progreso";
 import Medidas from "./pages/Medidas";
@@ -118,6 +119,8 @@ export default function App() {
           </p>
         )}
         <Routes>
+          <Route path="/recuperar" element={<Recuperar key="solicitar" setUsuario={setUsuario} />} />
+          <Route path="/restablecer" element={<Recuperar key="restablecer" restablecer setUsuario={setUsuario} />} />
           <Route
             path="/"
             element={usuario ? <Navigate to="/dashboard" /> : <Inicio />}

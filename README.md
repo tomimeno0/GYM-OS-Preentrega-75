@@ -42,7 +42,7 @@ Cohere se llama desde el backend, con clave privada en .env y consentimiento en 
 
 ## Estudiar y revisar
 
-[Las nueve guías](guias/README.md) reparten los 37 endpoints reales entre nueve responsables principales. Cada MD indica método/ruta, entrada, handler, consultas, respuestas, errores, pantalla que lo llama y su diagrama. El reparto es para estudiar y defender, no una certificación de autoría.
+[Las nueve guías](guias/README.md) reparten los 39 endpoints reales entre nueve responsables principales. Cada MD indica método/ruta, entrada, handler, consultas, respuestas, errores, pantalla que lo llama y su diagrama. El reparto es para estudiar y defender, no una certificación de autoría.
 
 [Mapa de operaciones UML](docs/METODOS-UML.md) · [Plan de reescritura](docs/PLAN.md) · [Verificación y límites](docs/VERIFICACION.md)
 
@@ -58,3 +58,9 @@ La lógica usa bucles tradicionales, if/else y llamadas directas a Sequelize. Lo
 ## Avance equilibrado entre los nueve
 
 El reparto actual conserva las responsabilidades de base del 50 % y da un paquete nuevo a cada integrante. Las guías describen tareas pendientes, endpoints, funciones, diagramas y casos de comprobación; no certifican autoría. El alcance de la entrega es flexible: el nombre histórico 75 no es una cuota rígida. Consultá el [plan actualizado](docs/PLAN.md) y las [nueve guías](guias/README.md).
+
+## Recuperación de contraseña
+
+El login incluye «Olvidé mi contraseña». El enlace vence en 15 minutos y se usa una sola vez. Al cambiar la contraseña se invalidan las sesiones anteriores. Configurá las variables SMTP y `APP_URL` de `.env.example`, ejecutá `npm run db:iniciar` para crear la tabla nueva y reiniciá el servidor. Sin SMTP, la API devuelve 503 y explica que el envío no está configurado. La configuración y el recorrido están en la guía de Gianluca.
+
+Esta ampliación posterior suma dos endpoints al corte anterior. Los porcentajes históricos y los 28 casos nominales describen el corte previo; no se recalcularon como si fueran mediciones de este cambio.

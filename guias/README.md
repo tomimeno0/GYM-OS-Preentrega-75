@@ -19,7 +19,7 @@ Se conservan las responsabilidades de base del 50 % y se añaden tareas concreta
 | [Simón Castellani](09-simon-castellani.md) | Edición de consumos y alimentos | 10.62 % |
 | **Total previsto** | **Nueve paquetes pendientes** | **100,00 %** |
 
-## Propiedad de los 37 endpoints
+## Propiedad de los 39 endpoints
 
 | Método y ruta | Responsable principal |
 | --- | --- |
@@ -64,3 +64,7 @@ Se conservan las responsabilidades de base del 50 % y se añaden tareas concreta
 La ampliación suma diez endpoints repartidos entre los nueve: ocho de nutrición y dos de IA. Tener una sola ruta nueva no significa una tarea pequeña: se incluyen pantalla, validaciones, datos, errores y comprobación. Tomás conserva el chat y la creación con IA; Joaquín toma adaptación. Valentín conserva la escritura de rutinas; Mateo conserva progreso. La cantidad de rutas por persona no es una medida de esfuerzo.
 
 [Plan y cobertura por archivo](../docs/PLAN.md). Los informes anteriores describen el reparto anterior y no se sobrescriben para simular otra historia.
+
+### Ampliación: recuperación de contraseña
+
+Gianluca incorpora `POST /api/recuperar-password` y `POST /api/restablecer-password`. Su [guía individual](01-gianluca-pizarro.md#recuperación-de-contraseña--ampliación-solicitada) explica formularios, controlador, modelo, SMTP, pruebas y diagrama. Los porcentajes anteriores no incluyen esta ampliación.

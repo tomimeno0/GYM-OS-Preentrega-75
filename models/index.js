@@ -1,3 +1,4 @@
+const Recuperacion = require("./Recuperacion.model");
 const Usuario = require("./Usuario.model");
 const Rol = require("./Rol.model");
 const UsuarioRol = require("./UsuarioRol.model");
@@ -92,7 +93,11 @@ Conversacion.hasMany(Mensaje, {
 Mensaje.belongsTo(Conversacion, { foreignKey: "conversacion_id" });
 Bitacora.belongsTo(Usuario, { foreignKey: "usuario_id", onDelete: "SET NULL" });
 
+Usuario.hasMany(Recuperacion, { foreignKey: "usuario_id", onDelete: "CASCADE" });
+Recuperacion.belongsTo(Usuario, { foreignKey: "usuario_id" });
+
 module.exports = {
+  Recuperacion,
   Usuario,
   Rol,
   UsuarioRol,
